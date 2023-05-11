@@ -59,7 +59,26 @@ class spline:
     #stops when the column is only "stop" elements long
     #returns that column as a list
     def de_boor(self, t, stop):
-        assert False, "Function not implemented"
+
+        index = self.knots.knot_index(t)
+        
+        control = self.control_points[index - 3: index + 1]
+        knot_vector = self.knots[index - 3: index + 3 + 1]
+        
+        result = control
+        k = 1
+        while(len(result) > stop):
+            new_result = []
+            for i in range(len(result)-1):
+                a_ik = (t - knot_vector[i+k]) / (knot_vector[i+self.degree+1] - knot_vector[i+k])
+                d_ik = (1.0 - a_ik) * result[i] + a_ik * result[i+1]
+                
+                new_result.append(d_ik)
+                
+            result = new_result
+            k += 1
+            
+        return result
 
     #adjusts the control points such that it represents the same function,
     #but with an added knot
@@ -301,5 +320,8 @@ class knots:
         self.knots.insert(i, t)
 
     def knot_index(self, v):
-        assert False, "Function not implemented"
-        return None
+        for i in range(len(self.knots)):
+            if v >= self.knots[i] and v < self.knots[i+1]:
+                return i
+            
+        RuntimeError("Assertion Error")
