@@ -24,9 +24,7 @@ def solve_tridiagonal_equation(diag1, diag2, diag3, res):
     
     x = [y[-1]] 
     for i in range(len(res)-2, -1, -1):
-        x.append(y[i] 
-                 - v[i+1] 
-                 * x[len(res) - i - 2])
+        x.append(y[i] - v[i+1] * x[len(res) - i - 2])
     
     solution = x
     return solution
