@@ -18,26 +18,30 @@ p.set_color("red")
 #interpolate six points with the four different interpolation options to
 #    draw a small letter "e"
 #uncomment these lines once you implemented the spline interpolation
-#pts = [vec2(0,.4), vec2(.8,.8), vec2(.5,1.2), vec2(-.03,.4), vec2(.4,0), vec2(1,.2)]
-#s1 = spline.interpolate_cubic(spline.INTERPOLATION_EQUIDISTANT, pts, knots(1))
-#s2 = spline.interpolate_cubic(spline.INTERPOLATION_CHORDAL, pts, knots(1))
+pts = [vec2(0,.4), vec2(.8,.8), vec2(.5,1.2), vec2(-.03,.4), vec2(.4,0), vec2(1,.2)]
+s1 = spline.interpolate_cubic(spline.INTERPOLATION_EQUIDISTANT, pts, knots(1))
+s2 = spline.interpolate_cubic(spline.INTERPOLATION_CHORDAL, pts, knots(1))
 #s3 = spline.interpolate_cubic(spline.INTERPOLATION_CENTRIPETAL, pts, knots(1))
 #s4 = spline.interpolate_cubic(spline.INTERPOLATION_FOLEY, pts, knots(1))
-#s1.set_color("#000066")
-#s2.set_color("#0000aa")
+s1.set_color("#000066")
+s2.set_color("#0000aa")
 #s3.set_color("#6666ff")
 #s4.set_color("#aaaaff")
-#p = polyline()
-#p.points = pts
-#p.set_color("red")
+p = polyline()
+p.points = pts
+p.set_color("red")
+
+#debug = polyline()
+#debug.points = s1.control_points
+#debug.set_color("green")
 
 #generate a scene and add elements to it
 sc = scene_2d.scene()
 sc.set_resolution(900)
-sc.add_element(example_spline)
+#sc.add_element(example_spline)
 sc.add_element(p)
-#sc.add_element(s1)
-#sc.add_element(s2)
+sc.add_element(s1)
+sc.add_element(s2)
 #sc.add_element(s3)
 #sc.add_element(s4)
 sc.write_image()    #compose all elements in the scene

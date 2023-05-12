@@ -128,8 +128,20 @@ class spline:
         spline_obj = spline(3)
         spline_obj.knots = knots(1)
         
-        if mode == 1:
+        if mode == spline.INTERPOLATION_EQUIDISTANT:
             spline_obj.knots.knots = [0,0,0] + list(range(len(points))) + [len(points) - 1, len(points) - 1, len(points) - 1]
+            
+        if mode == spline.INTERPOLATION_CHORDAL:
+            spline_obj.knots.knots = [0,0,0] + [0]
+            temp = spline_obj.knots.knots
+            
+            for i in range(len(points)-1):
+                distance = (points[i+1] - points[i]).__abs__()
+                spline_obj.knots.knots.append(temp[i+3] + distance)
+    
+            spline_obj.knots.knots.append(temp[-1])
+            spline_obj.knots.knots.append(temp[-1])
+            spline_obj.knots.knots.append(temp[-1])
             
         res = [points[0]] + [vec2(0.0, 0.0)] + points[1:-1] + [vec2(0.0, 0.0)] + [points[-1]]
         
@@ -137,8 +149,8 @@ class spline:
         b = [1]
         c = [0]
         
+        t = spline_obj.knots.knots
         for i in range(1, len(points)+1):
-            t = spline_obj.knots.knots
             a.append((t[i+2] - t[i]) / (t[i+3]- t[i]))
             b.append((t[i+2] - t[i+1]) / (t[i+3] - t[i+1]))
             c.append((t[i+2] - t[i+1]) / (t[i+4] - t[i+1]))
