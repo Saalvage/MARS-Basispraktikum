@@ -148,7 +148,7 @@ class spline:
                 spline_obj.knots.knots.append(temp[i+3] + distance)
         
         if mode == spline.INTERPOLATION_FOLEY:
-            spline_obj.knots.knots = [0.0,0.0,0.0]
+            spline_obj.knots.knots = [0.0,0.0,0.0] + [0.0]
             temp = spline_obj.knots.knots
             
             # d_i from -1 to m 
@@ -173,8 +173,9 @@ class spline:
             # print("d_i =", d_i)
             
             for i in range(1, len(points)):
-                t_hat = d_i[i-1] * (1.0 + (3.0/2.0 * (theta_hat[i-1]    * d_i[i-1]) /(d_i[i-1]  + d_i[i])) 
-                                        + (3.0/2.0 * (theta_hat[i]      * d_i[i+1])   /(d_i[i+1]    + d_i[i])))
+                t_hat = d_i[i] * (1.0 + (3.0/2.0 * (theta_hat[i-1]    * d_i[i-1])     / (d_i[i-1]  + d_i[i])) 
+                                        + (3.0/2.0 * (theta_hat[i]      * d_i[i+1])     / (d_i[i+1]  + d_i[i])))
+                print(f"t hat before: {t_hat}")
                 t_hat += spline_obj.knots.knots[-1]
                 spline_obj.knots.knots.append(t_hat)
                 
@@ -193,6 +194,9 @@ class spline:
         c = [0]
         
         t = spline_obj.knots.knots
+        
+        if mode == spline.INTERPOLATION_FOLEY:
+            print(t)
         for i in range(1, len(points)+1):
             a.append((t[i+2] - t[i]) / (t[i+3]- t[i]))
             b.append((t[i+2] - t[i+1]) / (t[i+3] - t[i+1]))
