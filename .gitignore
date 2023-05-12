@@ -1,2 +1,2 @@
-src\cagd\__pycache__\*.pyc
-\*.png
+src/cagd/__pycache__/*.pyc
+src/*.png
