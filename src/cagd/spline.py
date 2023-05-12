@@ -146,12 +146,25 @@ class spline:
             for i in range(len(points)-1):
                 distance = sqrt((points[i+1] - points[i]).__abs__())
                 spline_obj.knots.knots.append(temp[i+3] + distance)
+        
+        if mode == spline.INTERPOLATION_FOLEY:
+            spline_obj.knots.knots = [0,0,0]
+            temp = spline_obj.knots.knots
+            
+            for i in range(len(points)-1):
+                d_i = (points[i + 1] - points[i]).__abs__()
+                theta = 0 # TODO
+                
+                spline_obj.knots.knots.append()
+            
+            spline_obj.knots.knots.append(0.0)
+            
+            RuntimeError("Not yet implemented")
     
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
         
-            
         res = [points[0]] + [vec2(0.0, 0.0)] + points[1:-1] + [vec2(0.0, 0.0)] + [points[-1]]
         
         a = [-1]
