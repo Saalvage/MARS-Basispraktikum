@@ -148,22 +148,43 @@ class spline:
                 spline_obj.knots.knots.append(temp[i+3] + distance)
         
         if mode == spline.INTERPOLATION_FOLEY:
-            spline_obj.knots.knots = [0,0,0]
+            spline_obj.knots.knots = [0.0,0.0,0.0]
             temp = spline_obj.knots.knots
             
-            for i in range(len(points)-1):
-                d_i = (points[i + 1] - points[i]).__abs__()
-                theta = 0 # TODO
+            # d_i from -1 to m 
+            d_i = [None for _ in range(len(points))]
+            for i in range(len(d_i) - 1):
+                d_i[i] = (points[i+1] - points[i]).__abs__()
+            d_i.insert(0, 0.0)
+            d_i.pop()
+            d_i.append(0.0)
+            
+            
+            # from 1 to m - 1
+            theta_hat = [0.0 for _ in range(len(points))]
+            
+            for i in range(1, len(points) - 1):
+                vec_one = points[i] - points[i-1]
+                vec_two = points[i+1] - points[i]
                 
-                spline_obj.knots.knots.append()
+                theta = acos(vec_one.dot(vec_two) / vec_one.__abs__() * vec_two.__abs__())
+                theta_hat[i] = min(math.pi - theta, math.pi / 2.0)
+            # print("\n\ntheta hat =", theta_hat)
+            # print("d_i =", d_i)
             
-            spline_obj.knots.knots.append(0.0)
-            
-            RuntimeError("Not yet implemented")
+            for i in range(1, len(points)):
+                t_hat = d_i[i-1] * (1.0 + (3.0/2.0 * (theta_hat[i-1]    * d_i[i-1]) /(d_i[i-1]  + d_i[i])) 
+                                        + (3.0/2.0 * (theta_hat[i]      * d_i[i+1])   /(d_i[i+1]    + d_i[i])))
+                t_hat += spline_obj.knots.knots[-1]
+                spline_obj.knots.knots.append(t_hat)
+                
     
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
+        
+        # for s in spline_obj.knots.knots:
+        #     print(s)
         
         res = [points[0]] + [vec2(0.0, 0.0)] + points[1:-1] + [vec2(0.0, 0.0)] + [points[-1]]
         
