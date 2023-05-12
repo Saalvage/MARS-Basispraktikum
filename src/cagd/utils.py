@@ -22,11 +22,11 @@ def solve_tridiagonal_equation(diag1, diag2, diag3, res):
     for i in range(1, len(res)):
         y.append((res[i] - diag1[i] * y[i-1]) * (1.0/beta[i]) )
     
-    x = [y[-1]] 
-    for i in range(len(res)-2, -1, -1):
-        x.append(y[i] - v[i+1] * x[len(res) - i - 2])
-    
-    solution = x
+    solution = [None for _ in range(len(res))]
+    solution[-1] = y[-1] 
+    for i in range(len(res) - 2, -1, -1):
+        solution[i] = y[i] - v[i+1] * solution[i + 1]
+        
     return solution
      
 
