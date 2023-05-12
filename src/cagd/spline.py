@@ -167,7 +167,7 @@ class spline:
                 vec_one = points[i] - points[i-1]
                 vec_two = points[i+1] - points[i]
                 
-                theta = acos(vec_one.dot(vec_two) / vec_one.__abs__() * vec_two.__abs__())
+                theta = math.acos(vec_one.dot(vec_two) / (vec_one.__abs__() * vec_two.__abs__()))
                 theta_hat[i] = min(math.pi - theta, math.pi / 2.0)
             # print("\n\ntheta hat =", theta_hat)
             # print("d_i =", d_i)
