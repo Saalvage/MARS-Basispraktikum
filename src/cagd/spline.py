@@ -159,7 +159,6 @@ class spline:
             d_i.pop()
             d_i.append(0.0)
             
-            
             # from 1 to m - 1
             theta_hat = [0.0 for _ in range(len(points))]
             
@@ -169,13 +168,10 @@ class spline:
                 
                 theta = math.acos(vec_one.dot(vec_two) / (vec_one.__abs__() * vec_two.__abs__()))
                 theta_hat[i] = min(math.pi - theta, math.pi / 2.0)
-            # print("\n\ntheta hat =", theta_hat)
-            # print("d_i =", d_i)
-            
+
             for i in range(1, len(points)):
-                t_hat = d_i[i] * (1.0 + (3.0/2.0 * (theta_hat[i-1]    * d_i[i-1])     / (d_i[i-1]  + d_i[i])) 
-                                        + (3.0/2.0 * (theta_hat[i]      * d_i[i+1])     / (d_i[i+1]  + d_i[i])))
-                print(f"t hat before: {t_hat}")
+                t_hat = d_i[i] * (1.0   + (3.0/2.0 * (theta_hat[i-1]  * d_i[i-1]) / (d_i[i-1]  + d_i[i])) 
+                                        + (3.0/2.0 * (theta_hat[i]    * d_i[i+1]) / (d_i[i+1]  + d_i[i])))
                 t_hat += spline_obj.knots.knots[-1]
                 spline_obj.knots.knots.append(t_hat)
                 
@@ -183,9 +179,6 @@ class spline:
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
         spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
-        
-        # for s in spline_obj.knots.knots:
-        #     print(s)
         
         res = [points[0]] + [vec2(0.0, 0.0)] + points[1:-1] + [vec2(0.0, 0.0)] + [points[-1]]
         
@@ -195,8 +188,6 @@ class spline:
         
         t = spline_obj.knots.knots
         
-        if mode == spline.INTERPOLATION_FOLEY:
-            print(t)
         for i in range(1, len(points)+1):
             a.append((t[i+2] - t[i]) / (t[i+3]- t[i]))
             b.append((t[i+2] - t[i+1]) / (t[i+3] - t[i+1]))
