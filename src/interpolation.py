@@ -38,7 +38,7 @@ p.set_color("red")
 #generate a scene and add elements to it
 sc = scene_2d.scene()
 sc.set_resolution(900)
-#sc.add_element(example_spline)
+sc.add_element(example_spline)
 sc.add_element(p)
 sc.add_element(s1)
 sc.add_element(s2)
