@@ -42,7 +42,7 @@ class spline:
 
     # returns the interval [a, b) on which the spline is supported
     def support(self):
-        return (self.knots[self.degree], self.knots[len(self.knots) - self.degree - 1])
+        return self.knots[self.degree], self.knots[len(self.knots) - self.degree - 1]
 
     def __call__(self, t):
         return self.evaluate(t)
@@ -67,7 +67,7 @@ class spline:
 
         result = control
         k = 1
-        while (len(result) > stop):
+        while len(result) > stop:
             new_result = []
             for i in range(len(result) - 1):
                 a_ik = (t - knot_vector[i + k]) / (knot_vector[i + self.degree + 1] - knot_vector[i + k])
@@ -98,7 +98,7 @@ class spline:
                 max_vec.x = p.x
             if p.y > max_vec.y:
                 max_vec.y = p.y
-        return (min_vec, max_vec)
+        return min_vec, max_vec
 
     def draw(self, scene, num_samples):
         i = self.degree - 1
@@ -225,7 +225,7 @@ class spline:
         beta.append(1.0)
         gamma.append(0.0)
 
-        spline_obj.control_points = utils.solve_tridiagonal_equation(diag1=alpha, diag2=beta, diag3=gamma, res=res)
+        spline_obj.control_points = utils.solve_tridiagonal_equation(alpha, beta, gamma, res)
         return spline_obj
 
     # generates a spline that interpolates the given points and fulfills the definition
