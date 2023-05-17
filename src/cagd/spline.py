@@ -136,7 +136,7 @@ class spline:
             temp = spline_obj.knots.knots
             
             for i in range(len(points)-1):
-                distance = (points[i+1] - points[i]).__abs__()
+                distance = abs(points[i+1] - points[i])
                 spline_obj.knots.knots.append(temp[i+3] + distance)
         
         if mode == spline.INTERPOLATION_CENTRIPETAL:
@@ -144,7 +144,7 @@ class spline:
             temp = spline_obj.knots.knots
             
             for i in range(len(points)-1):
-                distance = sqrt((points[i+1] - points[i]).__abs__())
+                distance = sqrt(abs(points[i+1] - points[i]))
                 spline_obj.knots.knots.append(temp[i+3] + distance)
         
         if mode == spline.INTERPOLATION_FOLEY:
@@ -154,7 +154,7 @@ class spline:
             # d_i from -1 to m 
             d_i = [None for _ in range(len(points))]
             for i in range(len(d_i) - 1):
-                d_i[i] = (points[i+1] - points[i]).__abs__()
+                d_i[i] = abs(points[i+1] - points[i])
             d_i.insert(0, 0.0)
             d_i.pop()
             d_i.append(0.0)
@@ -166,7 +166,7 @@ class spline:
                 vec_one = points[i] - points[i-1]
                 vec_two = points[i+1] - points[i]
                 
-                theta = math.acos(vec_one.dot(vec_two) / (vec_one.__abs__() * vec_two.__abs__()))
+                theta = math.acos(vec_one.dot(vec_two) / (abs(vec_one) * abs(vec_two)))
                 theta_hat[i] = min(math.pi - theta, math.pi / 2.0)
 
             for i in range(1, len(points)):
