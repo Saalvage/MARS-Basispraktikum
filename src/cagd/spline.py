@@ -232,7 +232,6 @@ class spline:
     # of a periodic spline with equidistant knots
     # returns that spline object
     def interpolate_cubic_periodic(points):
-
         m = len(points) - 1
         degree = 3
         spline_obj = spline(degree)
