@@ -49,7 +49,6 @@ def calculate_circle_deviation(spline):
     max_deviation = max(abs_deviations)
     print("maximum deviation (absolute):", max_deviation)
 
-
     pass
 
 
