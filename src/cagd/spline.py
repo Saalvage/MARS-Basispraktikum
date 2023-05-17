@@ -59,7 +59,26 @@ class spline:
     #stops when the column is only "stop" elements long
     #returns that column as a list
     def de_boor(self, t, stop):
-        assert False, "Function not implemented"
+
+        index = self.knots.knot_index(t)
+        
+        control = self.control_points[index - 3: index + 1]
+        knot_vector = self.knots[index - 3: index + 3 + 1]
+        
+        result = control
+        k = 1
+        while(len(result) > stop):
+            new_result = []
+            for i in range(len(result)-1):
+                a_ik = (t - knot_vector[i+k]) / (knot_vector[i+self.degree+1] - knot_vector[i+k])
+                d_ik = (1.0 - a_ik) * result[i] + a_ik * result[i+1]
+                
+                new_result.append(d_ik)
+                
+            result = new_result
+            k += 1
+            
+        return result
 
     #adjusts the control points such that it represents the same function,
     #but with an added knot
@@ -106,8 +125,107 @@ class spline:
     #kts is only used as given knots in the mode: INTERPOLATION_GIVEN_KNOTS
     #returns that spline object
     def interpolate_cubic(mode, points, kts):
-        pass
+        spline_obj = spline(3)
+        spline_obj.knots = knots(1)
+        
+        if mode == spline.INTERPOLATION_EQUIDISTANT:
+            spline_obj.knots.knots = [0,0,0] + list(range(len(points)))
+            
+        if mode == spline.INTERPOLATION_CHORDAL:
+            spline_obj.knots.knots = [0,0,0] + [0]
+            temp = spline_obj.knots.knots
+            
+            for i in range(len(points)-1):
+                distance = (points[i+1] - points[i]).__abs__()
+                spline_obj.knots.knots.append(temp[i+3] + distance)
+        
+        if mode == spline.INTERPOLATION_CENTRIPETAL:
+            spline_obj.knots.knots = [0,0,0] + [0]
+            temp = spline_obj.knots.knots
+            
+            for i in range(len(points)-1):
+                distance = sqrt((points[i+1] - points[i]).__abs__())
+                spline_obj.knots.knots.append(temp[i+3] + distance)
+        
+        if mode == spline.INTERPOLATION_FOLEY:
+            spline_obj.knots.knots = [0.0,0.0,0.0] + [0.0]
+            temp = spline_obj.knots.knots
+            
+            # d_i from -1 to m 
+            d_i = [None for _ in range(len(points))]
+            for i in range(len(d_i) - 1):
+                d_i[i] = (points[i+1] - points[i]).__abs__()
+            d_i.insert(0, 0.0)
+            d_i.pop()
+            d_i.append(0.0)
+            
+            # from 1 to m - 1
+            theta_hat = [0.0 for _ in range(len(points))]
+            
+            for i in range(1, len(points) - 1):
+                vec_one = points[i] - points[i-1]
+                vec_two = points[i+1] - points[i]
+                
+                theta = math.acos(vec_one.dot(vec_two) / (vec_one.__abs__() * vec_two.__abs__()))
+                theta_hat[i] = min(math.pi - theta, math.pi / 2.0)
 
+            for i in range(1, len(points)):
+                t_hat = d_i[i] * (1.0   + (3.0/2.0 * (theta_hat[i-1]  * d_i[i-1]) / (d_i[i-1]  + d_i[i])) 
+                                        + (3.0/2.0 * (theta_hat[i]    * d_i[i+1]) / (d_i[i+1]  + d_i[i])))
+                t_hat += spline_obj.knots.knots[-1]
+                spline_obj.knots.knots.append(t_hat)
+                
+    
+        spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
+        spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
+        spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
+        
+        res = [points[0]] + [vec2(0.0, 0.0)] + points[1:-1] + [vec2(0.0, 0.0)] + [points[-1]]
+        
+        a = [-1]
+        b = [1]
+        c = [0]
+        
+        t = spline_obj.knots.knots
+        
+        for i in range(1, len(points)+1):
+            a.append((t[i+2] - t[i]) / (t[i+3]- t[i]))
+            b.append((t[i+2] - t[i+1]) / (t[i+3] - t[i+1]))
+            c.append((t[i+2] - t[i+1]) / (t[i+4] - t[i+1]))
+        
+        a.append(0.0)
+        b.append(1.0)
+        c.append(-1.0)
+        
+        # first row
+        alpha = [0.0]
+        beta = [1.0]
+        gamma = [0.0]
+        
+        # second row
+        alpha.append(-1.0)
+        beta.append(1.0 + a[2])
+        gamma.append(-a[2])
+        
+        # inner rows
+        for i in range(2, len(a)-2):
+            alpha.append((1 - b[i]) * (1 - a[i]))
+            beta.append((1 - b[i]) * a[i] + b[i] * (1 - c[i]))
+            gamma.append(b[i] * c[i])
+        
+        # second last row
+        alpha.append(-1.0 + c[len(a)-3])
+        beta .append( 2.0 - c[len(a)-3])
+        gamma.append(-1.0)
+        
+        # last row
+        alpha.append(0.0)
+        beta .append(1.0)
+        gamma.append(0.0)
+        
+        spline_obj.control_points = utils.solve_tridiagonal_equation(diag1 = alpha, diag2 = beta, diag3 = gamma, res=res)
+        return spline_obj
+        
 
     #generates a spline that interpolates the given points and fulfills the definition
     #of a periodic spline with equidistant knots
@@ -301,5 +419,8 @@ class knots:
         self.knots.insert(i, t)
 
     def knot_index(self, v):
-        assert False, "Function not implemented"
-        return None
+        for i in range(len(self.knots)):
+            if v >= self.knots[i] and v < self.knots[i+1]:
+                return i
+            
+        RuntimeError("Assertion Error")
