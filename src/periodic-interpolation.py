@@ -21,15 +21,34 @@ def unit_circle_points(num_samples):
 # calculates the deviation between the given spline and a unit circle
 def calculate_circle_deviation(spline):
     deviations = []
+
+    """   
+    # calculate deviation from perfect circle at every control point
+    # all deviations are consequently the same obviously
     control = spline.control_points
+     
     for i in range(len(control)):
         deviation = math.sqrt(control[i].x ** 2 + control[i].y ** 2) - 1  # should be 0 in a perfect circle
-        deviations.append(deviation)
+        deviations.append(deviation)"""
 
+    # calculate deviation from unit circle at each knot in the supported interval
+    a, b = spline.support()
+    for knot in spline.knots.knots:
+        if a <= knot <= b:
+            coord = spline(knot)
+            deviation = math.sqrt(coord.x ** 2 + coord.y ** 2) - 1
+            print("knot:", knot)
+            print("deviation:", deviation)
+            deviations.append(deviation)
+
+    print("deviations:", deviations)
     mean_error = sum(deviations) / len(deviations)
     print("mean error:", mean_error)
-    max_error = max(deviations)
-    print("maximum error:", max_error)
+
+    abs_deviations = [abs(d) for d in deviations]
+    max_deviation = max(abs_deviations)
+    print("maximum deviation (absolute):", max_deviation)
+
 
     pass
 
