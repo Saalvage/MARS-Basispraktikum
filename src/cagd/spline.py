@@ -128,6 +128,9 @@ class spline:
         spline_obj = spline(3)
         spline_obj.knots = knots(1)
         
+        if mode == spline.INTERPOLATION_GIVEN_KNOTS:
+            spline_obj.knots = kts
+        
         if mode == spline.INTERPOLATION_EQUIDISTANT:
             spline_obj.knots.knots = [0,0,0] + list(range(len(points)))
             
@@ -175,10 +178,10 @@ class spline:
                 t_hat += spline_obj.knots.knots[-1]
                 spline_obj.knots.knots.append(t_hat)
                 
-    
-        spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
-        spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
-        spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
+        if mode != spline.INTERPOLATION_GIVEN_KNOTS:
+            spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
+            spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
+            spline_obj.knots.knots.append(spline_obj.knots.knots[-1])
         
         res = [points[0]] + [vec2(0.0, 0.0)] + points[1:-1] + [vec2(0.0, 0.0)] + [points[-1]]
         
