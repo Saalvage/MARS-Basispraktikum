@@ -22,34 +22,24 @@ def unit_circle_points(num_samples):
 def calculate_circle_deviation(spline):
     deviations = []
 
-    """   
-    # calculate deviation from perfect circle at every control point
-    # all deviations are consequently the same obviously
-    control = spline.control_points
-     
-    for i in range(len(control)):
-        deviation = math.sqrt(control[i].x ** 2 + control[i].y ** 2) - 1  # should be 0 in a perfect circle
-        deviations.append(deviation)"""
-
-    # calculate deviation from unit circle at each knot in the supported interval
     a, b = spline.support()
-    for knot in spline.knots.knots:
-        if a <= knot <= b:
-            coord = spline(knot)
-            deviation = math.sqrt(coord.x ** 2 + coord.y ** 2) - 1
-            print("knot:", knot)
-            print("deviation:", deviation)
-            deviations.append(deviation)
+    iterations = 10000
+    for knot in [x / float(iterations) for x in range(iterations * a, iterations * b + 1)]:
+        coord = spline(knot)
+        deviation = abs(math.sqrt(coord.x ** 2 + coord.y ** 2) - 1)
+        deviations.append(deviation)
 
-    print("deviations:", deviations)
-    mean_error = sum(deviations) / len(deviations)
-    print("mean error:", mean_error)
+    mean = sum(deviations) / len(deviations)
+    print("mean deviation:", mean)
 
-    abs_deviations = [abs(d) for d in deviations]
-    max_deviation = max(abs_deviations)
-    print("maximum deviation (absolute):", max_deviation)
+    # this value is actually interesting to observe,
+    # a relatively large value means the approximation is struggling to fit the shape of a circle
+    # a relatively small value means the approximation correctly fits a circle, but the radius is incorrect
+    std = sum((x-mean)**2 for x in deviations) / len(deviations)
+    print("standard deviation:", std)
 
-    pass
+    max_v = max(deviations)
+    print("maximum deviation:", max_v)
 
 
 # interpolate 6 points with a periodic spline to create the number "8"
@@ -68,6 +58,11 @@ sc.add_element(p)
 # generate a spline that approximates the unit circle
 n = 8
 circle_pts = unit_circle_points(n)
+pts_line2 = polyline()
+pts_line2.points = circle_pts.copy()
+pts_line2.points.append(pts_line2.points[0])
+pts_line2.set_color("red")
+sc.add_element(pts_line2)
 circle = spline.interpolate_cubic_periodic(circle_pts)
 sc.add_element(circle)
 calculate_circle_deviation(circle)
