@@ -238,10 +238,6 @@ class spline:
         spline_obj.knots = knots(1)
         spline_obj.knots.knots = list(range(-degree - 1, m + degree + 1))
 
-        print("spline_obj.knots.knots:")
-        for knot in spline_obj.knots.knots:
-            print(knot)
-
         diag1 = diag3 = [1 / 6] * (m + 1)
         diag2 = [4 / 6] * (m + 1)
 
