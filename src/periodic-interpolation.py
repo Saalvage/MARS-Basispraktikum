@@ -35,11 +35,19 @@ def calculate_circle_deviation(spline):
     # this value is actually interesting to observe,
     # a relatively large value means the approximation is struggling to fit the shape of a circle
     # a relatively small value means the approximation correctly fits a circle, but the radius is incorrect
-    std = sum((x-mean)**2 for x in deviations) / len(deviations)
+    std = sum((x - mean) ** 2 for x in deviations) / len(deviations)
     print("standard deviation:", std)
 
     max_v = max(deviations)
     print("maximum deviation:", max_v)
+
+    # calculate mean squared error
+    mse = sum((x ** 2) for x in deviations) / len(deviations)
+    print("mean squared error:", mse)
+
+    # average absolute deviation
+    aad = sum(map(abs, deviations)) / len(deviations)
+    print("average absolute deviation:", aad)
 
 
 # interpolate 6 points with a periodic spline to create the number "8"
