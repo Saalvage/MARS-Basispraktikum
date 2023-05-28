@@ -30,7 +30,7 @@ def calculate_circle_deviation(spline):
         deviations.append(deviation)
 
     mean = sum(deviations) / len(deviations)
-    print("mean deviation:", mean)
+    print("mean absolute deviation:", mean)
 
     # this value is actually interesting to observe,
     # a relatively large value means the approximation is struggling to fit the shape of a circle
@@ -44,10 +44,6 @@ def calculate_circle_deviation(spline):
     # calculate mean squared error
     mse = sum((x ** 2) for x in deviations) / len(deviations)
     print("mean squared error:", mse)
-
-    # average absolute deviation
-    aad = sum(map(abs, deviations)) / len(deviations)
-    print("average absolute deviation:", aad)
 
 
 # interpolate 6 points with a periodic spline to create the number "8"
