@@ -41,10 +41,6 @@ def calculate_circle_deviation(spline):
     max_v = max(deviations)
     print("maximum deviation:", max_v)
 
-    # calculate mean squared error
-    mse = sum((x ** 2) for x in deviations) / len(deviations)
-    print("mean squared error:", mse)
-
 
 # interpolate 6 points with a periodic spline to create the number "8"
 pts = [vec2(0, 2.5), vec2(-1, 1), vec2(1, -1), vec2(0, -2.5), vec2(-1, -1), vec2(1, 1)]
