@@ -248,8 +248,6 @@ class spline:
 
         return spline_obj
 
-        pass
-
     # for splines of degree 3, generate a parallel spline with distance dist
     # the returned spline is off from the exact parallel by at most eps
     def generate_parallel(self, dist, eps):
