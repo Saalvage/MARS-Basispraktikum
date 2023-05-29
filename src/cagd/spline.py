@@ -232,7 +232,21 @@ class spline:
     # of a periodic spline with equidistant knots
     # returns that spline object
     def interpolate_cubic_periodic(points):
-        pass
+        m = len(points) - 1
+        degree = 3
+        spline_obj = spline(degree)
+        spline_obj.knots = knots(1)
+        spline_obj.knots.knots = list(range(-degree - 1, m + degree + 1))
+
+        diag1 = diag3 = [1 / 6] * (m + 1)
+        diag2 = [4 / 6] * (m + 1)
+
+        spline_obj.control_points = utils.solve_almost_tridiagonal_equation(diag1, diag2, diag3, points)
+
+        for i in range(degree):
+            spline_obj.control_points.append(spline_obj.control_points[i])
+
+        return spline_obj
 
     # for splines of degree 3, generate a parallel spline with distance dist
     # the returned spline is off from the exact parallel by at most eps
