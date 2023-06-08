@@ -48,7 +48,9 @@ class spline:
         return self.evaluate(t)
 
     def tangent(self, t):
-        pass
+        pt = self.evaluate(t)
+        n = 1 / sqrt(pt.x ** 2 + pt.y ** 2) * vec2(-pt.y, pt.x)
+        return n
 
     def get_color(self):
         return self.color
