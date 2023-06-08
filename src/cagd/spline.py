@@ -70,7 +70,7 @@ class spline:
         while len(result) > stop:
             new_result = []
             for i in range(len(result) - 1):
-                a_ik = (t - knot_vector[i + k]) / (knot_vector[i + self.degree + 1] - knot_vector[i + k])
+                a_ik = (t - knot_vector[i + k]) / (knot_vector[i + n + 1] - knot_vector[i + k])
                 d_ik = (1.0 - a_ik) * result[i] + a_ik * result[i + 1]
 
                 new_result.append(d_ik)
@@ -457,7 +457,7 @@ class knots:
 
     def knot_index(self, v):
         for i in range(len(self.knots)):
-            if v >= self.knots[i] and v < self.knots[i + 1]:
+            if self.knots[i] <= v < self.knots[i + 1]:
                 return i
 
         RuntimeError("Assertion Error")
