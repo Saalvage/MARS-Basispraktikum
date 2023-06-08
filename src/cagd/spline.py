@@ -83,7 +83,30 @@ class spline:
     # adjusts the control points such that it represents the same function,
     # but with an added knot
     def insert_knot(self, t):
-        pass
+        print("og control points:")
+        print("number:", len(self.control_points))
+        print(*self.control_points, sep="\n")
+
+        n = self.degree
+        index = self.knots.knot_index(t)
+        knot_vector = self.knots
+        control = self.control_points
+        new_control = self.control_points[:index - n + 1]
+
+        for j in range(index - n + 1, index + 1):
+            alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
+            d = (1 - alpha) * control[j - 1] + alpha * control[j]
+            new_control.append(d)
+            print("new d:", d)
+
+        new_control.extend(self.control_points[index:])
+
+        self.control_points = new_control
+        self.knots.insert(t)
+
+        print("resulting control points:")
+        print("number:", len(self.control_points))
+        print(*self.control_points, sep="\n")
 
     def get_axis_aligned_bounding_box(self):
         min_vec = copy.copy(self.control_points[0])
