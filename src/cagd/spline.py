@@ -85,10 +85,6 @@ class spline:
     # adjusts the control points such that it represents the same function,
     # but with an added knot
     def insert_knot(self, t):
-        print("og control points:")
-        print("number:", len(self.control_points))
-        print(*self.control_points, sep="\n")
-
         n = self.degree
         index = self.knots.knot_index(t)
         knot_vector = self.knots
@@ -105,10 +101,6 @@ class spline:
 
         self.control_points = new_control
         self.knots.insert(t)
-
-        print("resulting control points:")
-        print("number:", len(self.control_points))
-        print(*self.control_points, sep="\n")
 
     def get_axis_aligned_bounding_box(self):
         min_vec = copy.copy(self.control_points[0])
@@ -280,7 +272,32 @@ class spline:
         if dist == 0:
             return self
 
-        para_spline = None
+        a, b = self.support()
+        pts = []
+        n = []
+        para_pts = []
+        for knot in self.knots:
+            if a <= knot <= b:
+                new_pt = self.evaluate(knot)
+                new_n = self.tangent(knot)
+                pts.append(new_pt)
+                n.append(new_n)
+                para_pts.append(new_pt + dist * new_n)
+
+        new_knots = True
+        para_spline = spline(self.degree)
+
+        while new_knots:
+            para_spline = spline.interpolate_cubic(spline.INTERPOLATION_CHORDAL, para_pts, knots(1))
+            for i in range(len(self.knots) - 1):
+                midpoint = (self.knots[i] + self.knots[i + 1]) / 2
+                actual_dist = self.evaluate(midpoint) - para_spline.evaluate(midpoint)
+                if abs(dist - actual_dist) > eps:
+                    self.insert_knot(midpoint)
+
+            if len(self.knots) == len(para_spline.knots):
+                new_knots = False
+
         return para_spline
 
     # generates a rotational surface by rotating the spline around the z axis
@@ -306,7 +323,7 @@ class spline_surface:
         self.knots = (None, None)  # tuple of both knot vectors
         self.control_points = [[]]  # 2dim array of control points
 
-    # checks if the number of knots, controlpoints and degree define a valid spline
+    # checks if the number of knots, control points and degree define a valid spline
     def validate(self):
         if len(self.control_points) == 0:
             return False
