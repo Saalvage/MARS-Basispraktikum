@@ -95,7 +95,6 @@ class spline:
             alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
             d = (1 - alpha) * control[j - 1] + alpha * control[j]
             new_control.append(d)
-            print("new d:", d)
 
         new_control.extend(self.control_points[index:])
 
