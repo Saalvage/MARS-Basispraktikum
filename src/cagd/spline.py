@@ -292,17 +292,24 @@ class spline:
             para_pts = list(dict.fromkeys(para_pts)) # remove dups
 
             para_spline = spline(self.degree)
-            para_spline = spline.interpolate_cubic(spline.INTERPOLATION_CHORDAL, para_pts, knots(1))
 
+            for test in para_pts:
+                print(test)
+
+            for test in self.knots:
+                print(test)
+
+            para_spline = spline.interpolate_cubic(spline.INTERPOLATION_GIVEN_KNOTS, para_pts, self.knots)
+            
             for i in range(len(self.knots) - 1):
                 midpoint = (self.knots[i] + self.knots[i + 1]) / 2
                 actual_dist = self.evaluate(midpoint) - para_spline.evaluate(midpoint)
                 if abs(dist - sqrt(actual_dist.x ** 2 + actual_dist.y ** 2)) > eps:
                     self.insert_knot(midpoint)
-                    continue
-
-            new_knots = False
-
+                    break
+            else:
+                new_knots = False
+            
         return para_spline
 
     # generates a rotational surface by rotating the spline around the z axis
