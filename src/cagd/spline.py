@@ -48,9 +48,11 @@ class spline:
         return self.evaluate(t)
 
     def tangent(self, t):
-        pt = self.evaluate(t)
-        n = 1 / sqrt(pt.x ** 2 + pt.y ** 2) * vec2(-pt.y, pt.x)
-        return n
+        diff = 0.01
+        a, b = self.support()
+        left = max(a, t - diff)
+        right = min(b, t + diff)
+        return (self.evaluate(right) - self.evaluate(left)) * (1 / (right - left))
 
     def get_color(self):
         return self.color
@@ -272,30 +274,34 @@ class spline:
             return self
 
         a, b = self.support()
-        pts = []
-        n = []
-        para_pts = []
-        for knot in self.knots:
-            if a <= knot <= b:
-                new_pt = self.evaluate(knot)
-                new_n = self.tangent(knot)
-                pts.append(new_pt)
-                n.append(new_n)
-                para_pts.append(new_pt + dist * new_n)
-
         new_knots = True
-        para_spline = spline(self.degree)
 
         while new_knots:
+            pts = []
+            n = []
+            para_pts = []
+            for knot in self.knots:
+                if a <= knot <= b:
+                    new_pt = self.evaluate(knot)
+                    t = self.tangent(knot)
+                    new_n = 1 / sqrt(t.x ** 2 + t.y ** 2) * vec2(-t.y, t.x)
+                    pts.append(new_pt)
+                    n.append(new_n)
+                    para_pts.append(new_pt + dist * new_n)
+
+            para_pts = list(dict.fromkeys(para_pts)) # remove dups
+
+            para_spline = spline(self.degree)
             para_spline = spline.interpolate_cubic(spline.INTERPOLATION_CHORDAL, para_pts, knots(1))
+
             for i in range(len(self.knots) - 1):
                 midpoint = (self.knots[i] + self.knots[i + 1]) / 2
                 actual_dist = self.evaluate(midpoint) - para_spline.evaluate(midpoint)
-                if abs(dist - actual_dist) > eps:
+                if abs(dist - sqrt(actual_dist.x ** 2 + actual_dist.y ** 2)) > eps:
                     self.insert_knot(midpoint)
+                    continue
 
-            if len(self.knots) == len(para_spline.knots):
-                new_knots = False
+            new_knots = False
 
         return para_spline
 
