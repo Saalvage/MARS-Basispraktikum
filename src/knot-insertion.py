@@ -31,3 +31,4 @@ sc.add_element(p2)
 
 sc.write_image()
 sc.show()
+sc.write_to_file("inserted.png")

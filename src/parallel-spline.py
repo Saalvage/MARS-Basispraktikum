@@ -23,3 +23,4 @@ for i in [-1, 1]:
 
 sc.write_image()
 sc.show()
+sc.write_to_file("parallel.png")
