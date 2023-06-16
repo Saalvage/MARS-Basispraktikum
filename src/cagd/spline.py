@@ -276,6 +276,8 @@ class spline:
         a, b = self.support()
         new_knots = True
 
+        prev_no_of_knots = len(self.knots)
+
         while new_knots:
             pts = []
             n = []
@@ -289,27 +291,28 @@ class spline:
                     n.append(new_n)
                     para_pts.append(new_pt + dist * new_n)
 
-            para_pts = list(dict.fromkeys(para_pts)) # remove dups
+            para_pts = list(dict.fromkeys(para_pts))  # remove dups
 
-            para_spline = spline(self.degree)
-
-            for test in para_pts:
-                print(test)
-
-            for test in self.knots:
-                print(test)
+            print("para_pts:", *para_pts)
+            print("self.knots: ", *self.knots)
 
             para_spline = spline.interpolate_cubic(spline.INTERPOLATION_GIVEN_KNOTS, para_pts, self.knots)
-            
-            for i in range(len(self.knots) - 1):
+
+            for i in range(self.degree, len(self.knots) - self.degree - 1):
                 midpoint = (self.knots[i] + self.knots[i + 1]) / 2
-                actual_dist = self.evaluate(midpoint) - para_spline.evaluate(midpoint)
-                if abs(dist - sqrt(actual_dist.x ** 2 + actual_dist.y ** 2)) > eps:
+
+                vec_difference = self.evaluate(midpoint) - para_spline.evaluate(midpoint)
+                euclidean_dist = sqrt(vec_difference.x ** 2 + vec_difference.y ** 2)
+                dist_difference = abs(dist) - euclidean_dist
+
+                if abs(dist_difference) > eps:
                     self.insert_knot(midpoint)
                     break
-            else:
+
+            if prev_no_of_knots == len(self.knots):
                 new_knots = False
-            
+            prev_no_of_knots = len(self.knots)
+
         return para_spline
 
     # generates a rotational surface by rotating the spline around the z axis
