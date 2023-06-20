@@ -286,8 +286,30 @@ class spline:
         #     for j in i:
         #         print(j.x, j.y, j.z)
         
-        # Knots
+        # FALSE ATTEMPT
+        # splines = []
+        # for i in range(len(surface.control_points)):
+        #     spline_object = spline(self.degree)
+        #     spline_object.control_points = surface.control_points[:][i]
+        #     spline_object.knots = knots(spline_object.degree + num_samples + 2)
+        #     
+        #     for index in range(spline_object.degree + num_samples + 2):
+        #         spline_object.knots.knots[index] = index
+        #     
+        #     splines.append(spline_object)
         
+        u_knots = knots(self.degree + num_samples + 1)
+        for index in range(len(u_knots.knots)):
+            u_knots.knots[index] = index
+        
+        v_knots = knots(len(self.knots))
+        for index in range(len(v_knots.knots)):
+            v_knots.knots[index] = index
+        
+        surface.knots = (u_knots, v_knots)
+        
+        # DEBUG 
+        # print(f"surface object: {surface.validate()}\t")
         return surface
 
 
@@ -318,6 +340,10 @@ class spline_surface:
         p2 = len(self.control_points[0])
         points1 = len(k1) == p1 + d1 + 1
         points2 = len(k2) == p2 + d2 + 1
+        
+        # DEBUG
+        # print(f"points1 : {points1}\t len of k1 = {len(k1)}\t p1 = {p1}\t d1 = {d1}")
+        # print(f"points2 : {points2}\t len of k2 = {len(k2)}\t p2 = {p2}\t d2 = {d2}")
         return knots12 and points1 and points2
 
     def evaluate(self, u, v):
