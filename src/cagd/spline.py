@@ -278,7 +278,7 @@ class spline:
 
         prev_no_of_knots = len(self.knots)
 
-        original_spline = copy.copy(self)
+        original_spline = copy.deepcopy(self)
 
         while new_knots:
             pts = []
