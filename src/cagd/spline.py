@@ -278,40 +278,39 @@ class spline:
 
         prev_no_of_knots = len(self.knots)
 
+        original_spline = copy.copy(self)
+
         while new_knots:
             pts = []
             n = []
             para_pts = []
-            for knot in self.knots:
+            for knot in original_spline.knots:
                 if a <= knot <= b:
-                    new_pt = self.evaluate(knot)
-                    t = self.tangent(knot)
+                    new_pt = original_spline.evaluate(knot)
+                    t = original_spline.tangent(knot)
                     new_n = 1 / sqrt(t.x ** 2 + t.y ** 2) * vec2(-t.y, t.x)
                     pts.append(new_pt)
                     n.append(new_n)
                     para_pts.append(new_pt + dist * new_n)
 
-            para_pts = list(dict.fromkeys(para_pts))  # remove dups
+            para_pts = list(dict.fromkeys(para_pts))  # remove duplicates
 
-            print("para_pts:", *para_pts)
-            print("self.knots: ", *self.knots)
+            para_spline = spline.interpolate_cubic(spline.INTERPOLATION_GIVEN_KNOTS, para_pts, original_spline.knots)
 
-            para_spline = spline.interpolate_cubic(spline.INTERPOLATION_GIVEN_KNOTS, para_pts, self.knots)
+            for i in range(original_spline.degree, len(original_spline.knots) - original_spline.degree - 1):
+                midpoint = (original_spline.knots[i] + original_spline.knots[i + 1]) / 2
 
-            for i in range(self.degree, len(self.knots) - self.degree - 1):
-                midpoint = (self.knots[i] + self.knots[i + 1]) / 2
-
-                vec_difference = self.evaluate(midpoint) - para_spline.evaluate(midpoint)
+                vec_difference = original_spline.evaluate(midpoint) - para_spline.evaluate(midpoint)
                 euclidean_dist = sqrt(vec_difference.x ** 2 + vec_difference.y ** 2)
                 dist_difference = abs(dist) - euclidean_dist
 
                 if abs(dist_difference) > eps:
-                    self.insert_knot(midpoint)
+                    original_spline.insert_knot(midpoint)
                     break
 
-            if prev_no_of_knots == len(self.knots):
+            if prev_no_of_knots == len(original_spline.knots):
                 new_knots = False
-            prev_no_of_knots = len(self.knots)
+            prev_no_of_knots = len(original_spline.knots)
 
         return para_spline
 
