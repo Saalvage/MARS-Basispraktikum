@@ -263,7 +263,33 @@ class spline:
     # num_samples refers to the number of interpolation points in the rotational direction
     # returns a spline surface object in three dimensions
     def generate_rotation_surface(self, num_samples):
-        pass
+        print(self.degree, " - ", num_samples)
+        surface = spline_surface((self.degree, self.degree))
+        surface_control_points = []
+        
+        for j in range(num_samples):
+            c_i = []
+            for d_i in self.control_points:
+                c_i.append(vec3(
+                    d_i.x * cos(2.0 * pi * j / num_samples),
+                    d_i.x * sin(2.0 * pi * j / num_samples),
+                    d_i.y
+                ))
+            surface_control_points.append(c_i)
+        surface.control_points = surface_control_points
+        
+        # DEBUG
+        # count = 0
+        # for i in surface_control_points:
+        #     print(f"\ncount : {count}\n")
+        #     count += 1
+        #     for j in i:
+        #         print(j.x, j.y, j.z)
+        
+        # Knots
+        
+        return surface
+
 
 
 class spline_surface:
