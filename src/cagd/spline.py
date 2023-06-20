@@ -302,11 +302,7 @@ class spline:
         for index in range(len(u_knots.knots)):
             u_knots.knots[index] = index
         
-        v_knots = knots(len(self.knots))
-        for index in range(len(v_knots.knots)):
-            v_knots.knots[index] = index
-        
-        surface.knots = (u_knots, v_knots)
+        surface.knots = (u_knots, self.knots)
         
         # DEBUG 
         # print(f"surface object: {surface.validate()}\t")
