@@ -5,7 +5,7 @@ from cagd.spline import spline, spline_surface, knots
 from cagd.bezier import bezier_surface, bezier_patches
 from cagd.vec import vec2, vec3
 from cagd.viewer3d import viewer3d
-from cagd.point import point2D
+#from cagd.point import point2D
 
 import cagd.scene_2d as scene_2d
 
@@ -30,8 +30,8 @@ sc = scene_2d.scene()
 sc.set_resolution(900)
 sc.add_element(spl)
 
-for pt in spl.control_points:
-    sc.add_element(point2D(pt, "green"))
+#for pt in spl.control_points:
+#    sc.add_element(point2D(pt, "green"))
 
 surface = spl.generate_rotation_surface(8)
     
