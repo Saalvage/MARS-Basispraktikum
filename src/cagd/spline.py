@@ -500,32 +500,22 @@ class spline_surface:
     # and control points sitting also as bezier points.
     def to_bezier_patches(self):
         patches = bezier_patches()
-        n, m = self.degree
-
-        # Anpassung der Vielfachheiten ?
-        for i in range(m, len(self.knots[spline_surface.DIR_V])):
-            for _ in range(m):
-                self.insert_knot(spline_surface.DIR_V, self.knots[spline_surface.DIR_V].knots[i])
-
-        for i in range(n, len(self.knots[spline_surface.DIR_U])):
-            for _ in range(n):
-                self.insert_knot(spline_surface.DIR_U, self.knots[spline_surface.DIR_U].knots[i])
-
-        # (m + 1) x (n + 1) große Gruppen von Kontrollpunkten sind die Kontrollpunkte der Bézier Flächen
-        patch = bezier_surface(self.degree)
+        m, n = self.degree
         print(n, m)
-        for i in range(n + 1):
-            for j in range(m + 1):
-                patch.set_control_point(i, j, self.control_points[i][j])
-        patches.append(patch)
         
-        patch2 = bezier_surface(self.degree)
-        for i in range(n + 1):
-            for j in range(m + 1):
-                patch2.set_control_point(i, j, self.control_points[i+n-1][j+m-1])
-        patches.append(patch2)
-        
-        print(patches.patches)
+        # Anpassung der Vielfachheiten ?
+        u_list = copy.deepcopy(list(range(m, len(self.knots[spline_surface.DIR_U]))))
+        for i in range(len(u_list)):
+            for _ in range(m - 1):
+                print(f"u_list[i] = {u_list[i]}")
+                self.insert_knot(spline_surface.DIR_U, u_list[i])
+
+        v_list = copy.deepcopy(list(range(n, len(self.knots[spline_surface.DIR_V]))))
+        print(v_list)
+        for i in range(len(v_list)):
+            for _ in range(n - 1):
+                self.insert_knot(spline_surface.DIR_V, v_list[i])
+                
         return patches
 
 

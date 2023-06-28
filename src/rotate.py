@@ -23,19 +23,19 @@ pts = [ vec2(0.05,5.5),
 
 spl = spline.interpolate_cubic(spline.INTERPOLATION_CHORDAL, pts, knots(1))
 #you can activate these lines to view the input spline
-#spl.set_color("#0000ff")
-#sc = scene_2d.scene()
-#sc.set_resolution(900)
-#sc.add_element(spl)
-#sc.write_image()
-#sc.show()
+spl.set_color("#0000ff")
+sc = scene_2d.scene()
+sc.set_resolution(900)
+sc.add_element(spl)
+sc.write_image()
+sc.show()
 
 surface = spl.generate_rotation_surface(6)
 
-bezier_patches = surface.to_bezier_patches()
+#bezier_patches = surface.to_bezier_patches()
 
-bezier_patches.refine(2)
+#bezier_patches.refine(2)
 path = "surfaces.off"
 f = open(path, 'w')
-f.write(bezier_patches.export_standard_off())
+#f.write(bezier_patches.export_standard_off())
 f.close()
