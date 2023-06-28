@@ -48,7 +48,11 @@ class spline:
         return self.evaluate(t)
 
     def tangent(self, t):
-        pass
+        diff = 0.01
+        a, b = self.support()
+        left = max(a, t - diff)
+        right = min(b, t + diff)
+        return (self.evaluate(right) - self.evaluate(left)) * (1 / (right - left))
 
     def get_color(self):
         return self.color
@@ -70,7 +74,7 @@ class spline:
         while len(result) > stop:
             new_result = []
             for i in range(len(result) - 1):
-                a_ik = (t - knot_vector[i + k]) / (knot_vector[i + self.degree + 1] - knot_vector[i + k])
+                a_ik = (t - knot_vector[i + k]) / (knot_vector[i + n + 1] - knot_vector[i + k])
                 d_ik = (1.0 - a_ik) * result[i] + a_ik * result[i + 1]
 
                 new_result.append(d_ik)
@@ -83,7 +87,21 @@ class spline:
     # adjusts the control points such that it represents the same function,
     # but with an added knot
     def insert_knot(self, t):
-        pass
+        n = self.degree
+        index = self.knots.knot_index(t)
+        knot_vector = self.knots
+        control = self.control_points
+        new_control = self.control_points[:index - n + 1]
+
+        for j in range(index - n + 1, index + 1):
+            alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
+            d = (1 - alpha) * control[j - 1] + alpha * control[j]
+            new_control.append(d)
+
+        new_control.extend(self.control_points[index:])
+
+        self.control_points = new_control
+        self.knots.insert(t)
 
     def get_axis_aligned_bounding_box(self):
         min_vec = copy.copy(self.control_points[0])
@@ -255,7 +273,45 @@ class spline:
         if dist == 0:
             return self
 
-        para_spline = None
+        a, b = self.support()
+        new_knots = True
+
+        prev_no_of_knots = len(self.knots)
+
+        spline_copy = copy.deepcopy(self)
+
+        while new_knots:
+            pts = []
+            n = []
+            para_pts = []
+            for knot in spline_copy.knots:
+                if a <= knot <= b:
+                    new_pt = spline_copy.evaluate(knot)
+                    t = spline_copy.tangent(knot)
+                    new_n = 1 / sqrt(t.x ** 2 + t.y ** 2) * vec2(-t.y, t.x)
+                    pts.append(new_pt)
+                    n.append(new_n)
+                    para_pts.append(new_pt + dist * new_n)
+
+            para_pts = list(dict.fromkeys(para_pts))  # remove duplicates
+
+            para_spline = spline.interpolate_cubic(spline.INTERPOLATION_GIVEN_KNOTS, para_pts, spline_copy.knots)
+
+            for i in range(spline_copy.degree, len(spline_copy.knots) - spline_copy.degree - 1):
+                midpoint = (spline_copy.knots[i] + spline_copy.knots[i + 1]) / 2
+
+                vec_difference = spline_copy.evaluate(midpoint) - para_spline.evaluate(midpoint)
+                euclidean_dist = sqrt(vec_difference.x ** 2 + vec_difference.y ** 2)
+                dist_difference = abs(dist) - euclidean_dist
+
+                if abs(dist_difference) > eps:
+                    spline_copy.insert_knot(midpoint)
+                    break
+
+            if prev_no_of_knots == len(spline_copy.knots):
+                new_knots = False
+            prev_no_of_knots = len(spline_copy.knots)
+
         return para_spline
 
     # generates a rotational surface by rotating the spline around the z axis
@@ -281,7 +337,7 @@ class spline_surface:
         self.knots = (None, None)  # tuple of both knot vectors
         self.control_points = [[]]  # 2dim array of control points
 
-    # checks if the number of knots, controlpoints and degree define a valid spline
+    # checks if the number of knots, control points and degree define a valid spline
     def validate(self):
         if len(self.control_points) == 0:
             return False
@@ -434,7 +490,7 @@ class knots:
 
     def knot_index(self, v):
         for i in range(len(self.knots)):
-            if v >= self.knots[i] and v < self.knots[i + 1]:
+            if self.knots[i] <= v < self.knots[i + 1]:
                 return i
 
         RuntimeError("Assertion Error")
