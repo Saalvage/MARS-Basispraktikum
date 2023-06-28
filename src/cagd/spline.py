@@ -277,7 +277,9 @@ class spline:
                 ))
             periodic = spline.interpolate_cubic_periodic(c_i)
             
-            surface_control_points.append(list(map(lambda vec_2, elem: vec3(vec_2.x, vec_2.y, elem.y), periodic.control_points, self.control_points)))
+            surface_control_points.append(list(
+                    map(lambda periodic_cp, z_component: 
+                        vec3(periodic_cp.x, periodic_cp.y, z_component.y), periodic.control_points, self.control_points)))
         surface.control_points = surface_control_points
         
         # DEBUG
@@ -442,6 +444,32 @@ class spline_surface:
     # and control points sitting also as bezier points.
     def to_bezier_patches(self):
         patches = bezier_patches()
+        n, m = self.degree
+
+        # Anpassung der Vielfachheiten ?
+        for i in range(m, len(self.knots[spline_surface.DIR_V])):
+            for _ in range(m):
+                self.insert_knot(spline_surface.DIR_V, self.knots[spline_surface.DIR_V].knots[i])
+
+        for i in range(n, len(self.knots[spline_surface.DIR_U])):
+            for _ in range(n):
+                self.insert_knot(spline_surface.DIR_U, self.knots[spline_surface.DIR_U].knots[i])
+
+        # (m + 1) x (n + 1) große Gruppen von Kontrollpunkten sind die Kontrollpunkte der Bézier Flächen
+        patch = bezier_surface(self.degree)
+        print(n, m)
+        for i in range(n + 1):
+            for j in range(m + 1):
+                patch.set_control_point(i, j, self.control_points[i][j])
+        patches.append(patch)
+        
+        patch2 = bezier_surface(self.degree)
+        for i in range(n + 1):
+            for j in range(m + 1):
+                patch2.set_control_point(i, j, self.control_points[i+n-1][j+m-1])
+        patches.append(patch2)
+        
+        print(patches.patches)
         return patches
 
 
