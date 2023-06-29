@@ -100,7 +100,7 @@ class spline:
         if multiplicity == 0:
             for j in range(index - n + 1, index + 1):
                 alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
-                d = (1 - alpha) * control[j - 1] + alpha * control[j]
+                d = (1 - alpha) * control[(j - 1) % len(self.control_points)] + alpha * control[j % len(self.control_points)]
                 new_control.append(d)
 
             new_control.extend(self.control_points[index:])
@@ -108,7 +108,7 @@ class spline:
         else:
             for j in range(index - n + 1, index - multiplicity):
                 alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
-                d = (1 - alpha) * control[j - 1] + alpha * control[j]
+                d = (1 - alpha) * control[(j - 1) % len(self.control_points)] + alpha * control[j % len(self.control_points)]
                 new_control.append(d)
 
             new_control.extend(self.control_points[(index - multiplicity - 1):])
@@ -519,7 +519,7 @@ class spline_surface:
         dir_v = spline_surface.DIR_V
         u_knots, v_knots = self.knots
 
-        inner_u_knots = copy.deepcopy(u_knots[m:len(u_knots) - m + 1])
+        inner_u_knots = copy.deepcopy(u_knots[m:len(u_knots) - m + 2])
         print(*inner_u_knots)
         for i in range(len(inner_u_knots)):
             knot = inner_u_knots[i]
