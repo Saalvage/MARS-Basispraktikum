@@ -519,7 +519,7 @@ class spline_surface:
         dir_v = spline_surface.DIR_V
         u_knots, v_knots = self.knots
 
-        inner_u_knots = copy.deepcopy(u_knots[m:len(u_knots) - m + 2])
+        inner_u_knots = copy.deepcopy(u_knots[m:len(u_knots) - m + 1])
         print(*inner_u_knots)
         for i in range(len(inner_u_knots)):
             knot = inner_u_knots[i]
