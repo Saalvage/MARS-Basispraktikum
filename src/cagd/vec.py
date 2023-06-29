@@ -42,6 +42,12 @@ class vec3:
     def __hash__(self):
         return hash((self.x, self.y, self.z))
 
+    def __repr__(self) -> str:
+        return f"({self.x}\t{self.y}\t{self.z})"
+    
+    # def __lt__(a, b):
+    #     return a.y < b.y
+    
     def __copy__(self):
         return vec2(self.x, self.y, self.z)
 
