@@ -538,6 +538,11 @@ class spline_surface:
 
         print("u_knots after:", *self.knots[dir_u].knots)
         print("v_knots after:", *self.knots[dir_v].knots)
+
+        print("Control Points:\n" + "\n".join(
+            map(lambda x : "\n".join(list(map(lambda inner : repr(inner), x))), self.control_points)
+        ))
+
         return patches
 
 
