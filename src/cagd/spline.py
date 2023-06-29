@@ -1,6 +1,8 @@
 #! /usr/bin/python
 
 import math
+
+import numpy as np
 from cagd.vec import vec2, vec3
 from cagd.polyline import polyline
 from cagd.bezier import bezier_surface, bezier_patches
@@ -100,7 +102,8 @@ class spline:
         if multiplicity == 0:
             for j in range(index - n + 1, index + 1):
                 alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
-                d = (1 - alpha) * control[(j - 1) % len(self.control_points)] + alpha * control[j % len(self.control_points)]
+                d = (1 - alpha) * control[(j - 1) % len(self.control_points)] + alpha * control[
+                    j % len(self.control_points)]
                 new_control.append(d)
 
             new_control.extend(self.control_points[index:])
@@ -108,7 +111,8 @@ class spline:
         else:
             for j in range(index - n + 1, index - multiplicity):
                 alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
-                d = (1 - alpha) * control[(j - 1) % len(self.control_points)] + alpha * control[j % len(self.control_points)]
+                d = (1 - alpha) * control[(j - 1) % len(self.control_points)] + alpha * control[
+                    j % len(self.control_points)]
                 new_control.append(d)
 
             new_control.extend(self.control_points[(index - multiplicity - 1):])
@@ -508,6 +512,9 @@ class spline_surface:
             self.knots = (spl.knots, kv)
         self.control_points = new_control_points
 
+    """def binomial(self, n,k):
+        return np.factorial(n) // np.factorial(k) // np.factorial(n-k)"""
+
     # build bezier patches based on the spline with multiple knots
     # and control points sitting also as bezier points.
     def to_bezier_patches(self):
@@ -523,7 +530,7 @@ class spline_surface:
         print(*inner_u_knots)
         for i in range(len(inner_u_knots)):
             knot = inner_u_knots[i]
-            p = inner_u_knots.count(knot)
+            p = self.knots[dir_u].knots.count(knot)
             for _ in range(m - p):
                 self.insert_knot(dir_u, knot)
 
@@ -539,9 +546,23 @@ class spline_surface:
         print("u_knots after:", *self.knots[dir_u].knots)
         print("v_knots after:", *self.knots[dir_v].knots)
 
-        print("Control Points:\n" + "\n".join(
+        for i in range(0, len(self.control_points), m):
+            for j in range(0, len(self.control_points[i]), n):
+                new_patch = bezier_surface(self.degree)
+                new_control = [[None] * (n + 1) for _ in range(m + 1)]
+                for k in range(m + 1):
+                    for l in range(n + 1):
+                        #bernstein = np.factorial(n)
+                        new_control[k][l] = self.control_points[(i + k) % len(self.control_points)][
+                            (j + l) % len(self.control_points[i])]
+                        print("new control point in row", k, "and column", l, ":", new_control[k][l])
+
+                new_patch.control_points = new_control
+                patches.append(new_patch)
+
+        """print("Control Points:\n" + "\n".join(
             map(lambda x : "\n".join(list(map(lambda inner : repr(inner), x))), self.control_points)
-        ))
+        ))"""
 
         return patches
 

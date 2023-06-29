@@ -25,8 +25,18 @@ pts = [vec2(0.05, 5.5),
 spl = spline.interpolate_cubic(spline.INTERPOLATION_CHORDAL, pts, knots(1))
 spl.set_color("#0000ff")
 sc = scene_2d.scene()
-sc.set_resolution(900)
+
+
+"""sc.set_resolution(900)
 sc.add_element(spl)
+p = spl.get_polyline_from_control_points()
+p.set_color("red")
+sc.add_element(p)
+sc.write_image()
+sc.show()
+
+sc.set_resolution(900)
+sc.add_element(spl)"""
 
 surface = spl.generate_rotation_surface(8)
 
@@ -39,7 +49,7 @@ bezier_patches = surface.to_bezier_patches()
 # show points of bezier patches
 cps = [pt for pts in surface.control_points for pt in pts]
 v.display_points(cps, vec3(0, 0, 0), "green")
-# v.display_object(bezier_patches, vec3(0,0,0))
+v.display_object(bezier_patches, vec3(0,0,0))
 
 # bezier_patches.refine(2)
 # show refined object
