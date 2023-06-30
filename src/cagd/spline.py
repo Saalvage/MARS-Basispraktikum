@@ -505,8 +505,8 @@ class spline_surface:
             for x in range(n - p):
                 self.insert_knot(spline_surface.DIR_V, knot)
 
-        for i in range(0, len(self.control_points), m):
-            for j in range(0, len(self.control_points[i]), n):
+        for i in range(0, len(self.control_points)-m, m):
+            for j in range(0, len(self.control_points[i])-n, n):
                 new_patch = bezier_surface(self.degree)
                 new_control = [[None] * (n + 1) for _ in range(m + 1)]
                 for k in range(m + 1):

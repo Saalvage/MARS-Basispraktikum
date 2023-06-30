@@ -28,7 +28,6 @@ sc = scene_2d.scene()
 sc.set_resolution(900)
 sc.add_element(spl)
 
-
 surface = spl.generate_rotation_surface(8)
 
 v = viewer3d()
@@ -39,10 +38,10 @@ v.display_points(cps, vec3(0, 0, 0), "red")
 bezier_patches = surface.to_bezier_patches()
 # show points of bezier patches
 cps = [pt for pts in surface.control_points for pt in pts]
-v.display_points(cps, vec3(0,0,0), "green")
-v.display_object(bezier_patches, vec3(0,0,0))
+v.display_points(cps, vec3(0, 0, 0), "green")
+v.display_object(bezier_patches, vec3(0, 0, 0))
 
-# bezier_patches.refine(2)
+bezier_patches.refine(2)
 # show refined object
-# v.display_object(bezier_patches, vec3(-5,5,0))
+v.display_object(bezier_patches, vec3(-5,5,0))
 v.show()
