@@ -2,6 +2,7 @@ import pyvista as pv
 import random
 import numpy as np
 
+
 class viewer3d:
 
     def __init__(self):
@@ -11,7 +12,6 @@ class viewer3d:
         self.p.add_axes()
         self.p.show()
 
-
     def get_data(self, patches):
         def avg_color(f_cs):
             avg_f_c = [0, 0, 0]
@@ -19,9 +19,9 @@ class viewer3d:
                 avg_f_c[0] += f_c[0]
                 avg_f_c[1] += f_c[1]
                 avg_f_c[2] += f_c[2]
-            return (round(255*avg_f_c[0]/4),
-                    round(255*avg_f_c[1]/4),
-                    round(255*avg_f_c[2]/4))
+            return (round(255 * avg_f_c[0] / 4),
+                    round(255 * avg_f_c[1] / 4),
+                    round(255 * avg_f_c[2] / 4))
 
         vertices = []
         faces = []
@@ -39,7 +39,7 @@ class viewer3d:
             col_num = len(cps[0])
             for row in range(row_num - 1):
                 for col in range(col_num - 1):
-                    first_v = start_v + row*col_num + col
+                    first_v = start_v + row * col_num + col
                     f_vertices = [4, first_v, first_v + 1, first_v + 1 + col_num, first_v + col_num]
                     faces.extend(f_vertices)
                     colors.append(avg_color(patch.color))
@@ -48,8 +48,9 @@ class viewer3d:
         return vertices, faces, colors
 
     def display_object(self, obj, offset):
-        vertices, faces, colors = self.get_data(obj.patches)  
-        mesh = pv.PolyData(np.array([[v[0] + offset.x, v[1] + offset.y, v[2] + offset.z] for v in vertices]) , np.array(faces))
+        vertices, faces, colors = self.get_data(obj.patches)
+        mesh = pv.PolyData(np.array([[v[0] + offset.x, v[1] + offset.y, v[2] + offset.z] for v in vertices]),
+                           np.array(faces))
         mesh.add_field_data(np.array(colors), "colors")
         self.p.add_mesh(mesh, show_edges=True, line_width=1, scalars="colors", preference='cell', rgb=True)
 
@@ -71,7 +72,7 @@ class viewer3d:
         points = []
         for pt in cps:
             points.extend([pt.x + offset.x, pt.y + offset.y, pt.z + offset.z])
-        cps = pv.PolyData(np.array(points) )
+        cps = pv.PolyData(np.array(points))
         self.p.add_points(cps, point_size=10, color=color)
 
     def add_text(self, text):

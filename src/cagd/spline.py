@@ -27,7 +27,7 @@ class spline:
         self.control_points = []
         self.color = "black"
 
-    # checks if the number of knots, controlpoints and degree define a valid spline
+    # checks if the number of knots, control points and degree define a valid spline
     def validate(self):
         knots = self.knots.validate()
         points = len(self.knots) == len(self.control_points) + self.degree + 1
@@ -92,30 +92,18 @@ class spline:
         n = self.degree
         index = self.knots.knot_index(t)
         knot_vector = self.knots
-        control = self.control_points
-        assert (len(knot_vector) == len(control) + n + 1)
-        new_control = self.control_points[:index - n + 1]
-
         multiplicity = knot_vector.knots.count(t)
-        assert (multiplicity >= 0)
+        control = self.control_points
+        new_control = []
 
-        if multiplicity == 0:
-            for j in range(index - n + 1, index + 1):
-                alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
-                d = (1 - alpha) * control[(j - 1) % len(self.control_points)] + alpha * control[
-                    j % len(self.control_points)]
-                new_control.append(d)
-
-            new_control.extend(self.control_points[index:])
-
-        else:
-            for j in range(index - n + 1, index - multiplicity):
-                alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
-                d = (1 - alpha) * control[(j - 1) % len(self.control_points)] + alpha * control[
-                    j % len(self.control_points)]
-                new_control.append(d)
-
-            new_control.extend(self.control_points[(index - multiplicity - 1):])
+        for i in range(index - n + 2):
+            new_control.append(control[i])
+        for i in range(index - n + 2, index + 1):
+            alpha = (t - knot_vector[i]) / (knot_vector[(i + n) % len(knot_vector)] - knot_vector[i])
+            d = (1 - alpha) * control[(i - 1) % len(control)] + alpha * control[i % len(control)]
+            new_control.append(d)
+        for i in range(index + 1, len(control) + 1):
+            new_control.append(control[i - 1])
 
         self.control_points = new_control
         self.knots.insert(t)
@@ -336,54 +324,36 @@ class spline:
     # num_samples refers to the number of interpolation points in the rotational direction
     # returns a spline surface object in three dimensions
     def generate_rotation_surface(self, num_samples):
-        # DEBUG
-        # print(self.degree, " - ", num_samples)
         surface = spline_surface((self.degree, self.degree))
         surface_control_points = []
 
-        for j in range(num_samples):
+        for d_i in self.control_points:
+            z = d_i.y
             c_i = []
-            for d_i in self.control_points:
-                c_i.append(vec2(
-                    d_i.x * cos(2.0 * pi * j / num_samples),
-                    d_i.x * sin(2.0 * pi * j / num_samples)
-                ))
+
+            for j in range(num_samples):
+                x = d_i.x * cos(2.0 * pi * j / num_samples)
+                y = d_i.x * sin(2.0 * pi * j / num_samples)
+                c_i.append(vec2(x, y))
             periodic = spline.interpolate_cubic_periodic(c_i)
-
-            surface_control_points.append(list(
-                map(lambda periodic_cp, z_component:
-                    vec3(periodic_cp.x, periodic_cp.y, z_component.y), periodic.control_points, self.control_points)))
+            new_control = []
+            for point in periodic.control_points:
+                new_control.append(vec3(point.x, point.y, z))
+            surface_control_points.append(new_control)
         surface.control_points = surface_control_points
-
-        # DEBUG
-        # count = 0
-        # for i in surface_control_points:
-        #     print(f"\ncount : {count}\n")
-        #     count += 1
-        #     for j in i:
-        #         print(j.x, j.y, j.z)
-
-        # FALSE ATTEMPT
-        # splines = []
-        # for i in range(len(surface.control_points)):
-        #     spline_object = spline(self.degree)
-        #     spline_object.control_points = surface.control_points[:][i]
-        #     spline_object.knots = knots(spline_object.degree + num_samples + 2)
-        #
-        #     for index in range(spline_object.degree + num_samples + 2):
-        #         spline_object.knots.knots[index] = index
-        #
-        #     splines.append(spline_object)
 
         u_knots = knots(self.degree + num_samples + 1)
         for index in range(len(u_knots.knots)):
             u_knots.knots[index] = index
 
         surface.knots = (u_knots, self.knots)
+        surface.periodic = (True, False)
 
-        # DEBUG
-        # print(f"surface object: {surface.validate()}\t")
         return surface
+
+
+def binomial(n, k):
+    return np.math.factorial(n) // np.math.factorial(k) // np.math.factorial(n - k)
 
 
 class spline_surface:
@@ -512,39 +482,28 @@ class spline_surface:
             self.knots = (spl.knots, kv)
         self.control_points = new_control_points
 
-    """def binomial(self, n,k):
-        return np.factorial(n) // np.factorial(k) // np.factorial(n-k)"""
-
     # build bezier patches based on the spline with multiple knots
     # and control points sitting also as bezier points.
     def to_bezier_patches(self):
         patches = bezier_patches()
         m, n = self.degree
         print(m, n)
-
-        dir_u = spline_surface.DIR_U
-        dir_v = spline_surface.DIR_V
         u_knots, v_knots = self.knots
 
         inner_u_knots = copy.deepcopy(u_knots[m:len(u_knots) - m + 2])
         print(*inner_u_knots)
         for i in range(len(inner_u_knots)):
             knot = inner_u_knots[i]
-            p = self.knots[dir_u].knots.count(knot)
-            for _ in range(m - p):
-                self.insert_knot(dir_u, knot)
+            p = self.knots[spline_surface.DIR_U].knots.count(knot)
+            for x in range(m - p):
+                self.insert_knot(spline_surface.DIR_U, knot)
 
         inner_v_knots = copy.deepcopy(v_knots[n:len(v_knots) - n + 2])
-        print("v_knots:", *v_knots)
-        print("inner_v_knots:", *inner_v_knots)
         for i in range(len(inner_v_knots)):
             knot = inner_v_knots[i]
-            p = self.knots[dir_v].knots.count(knot)
-            for _ in range(n - p):
-                self.insert_knot(dir_v, knot)
-
-        print("u_knots after:", *self.knots[dir_u].knots)
-        print("v_knots after:", *self.knots[dir_v].knots)
+            p = self.knots[spline_surface.DIR_V].knots.count(knot)
+            for x in range(n - p):
+                self.insert_knot(spline_surface.DIR_V, knot)
 
         for i in range(0, len(self.control_points), m):
             for j in range(0, len(self.control_points[i]), n):
@@ -552,17 +511,11 @@ class spline_surface:
                 new_control = [[None] * (n + 1) for _ in range(m + 1)]
                 for k in range(m + 1):
                     for l in range(n + 1):
-                        #bernstein = np.factorial(n)
                         new_control[k][l] = self.control_points[(i + k) % len(self.control_points)][
                             (j + l) % len(self.control_points[i])]
-                        print("new control point in row", k, "and column", l, ":", new_control[k][l])
 
                 new_patch.control_points = new_control
                 patches.append(new_patch)
-
-        """print("Control Points:\n" + "\n".join(
-            map(lambda x : "\n".join(list(map(lambda inner : repr(inner), x))), self.control_points)
-        ))"""
 
         return patches
 
@@ -608,6 +561,5 @@ class knots:
         for i in range(len(self.knots) - 1):
             if self.knots[i] <= v < self.knots[i + 1]:
                 return i
-        return len(self.knots) - 1
 
         RuntimeError("Assertion Error")
