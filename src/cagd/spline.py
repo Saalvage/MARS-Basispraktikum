@@ -89,24 +89,70 @@ class spline:
     # adjusts the control points such that it represents the same function,
     # but with an added knot
     def insert_knot(self, t):
-        n = self.degree
         index = self.knots.knot_index(t)
-        knot_vector = self.knots
-        multiplicity = knot_vector.knots.count(t)
-        control = self.control_points
         new_control = []
+        new_knots = []
+        len_new_knots = len(self.knots) + 1
 
-        for i in range(index - n + 2):
-            new_control.append(control[i])
-        for i in range(index - n + 2, index + 1):
-            alpha = (t - knot_vector[i]) / (knot_vector[(i + n) % len(knot_vector)] - knot_vector[i])
-            d = (1 - alpha) * control[(i - 1) % len(control)] + alpha * control[i % len(control)]
-            new_control.append(d)
-        for i in range(index + 1, len(control) + 1):
-            new_control.append(control[i - 1])
+        # assert that t is supported
+        a, b = self.support()
+        assert (a <= t <= b)
 
-        self.control_points = new_control
-        self.knots.insert(t)
+        if self.periodic:
+            period = 0
+
+            # determine period
+            for i in range(1, len(self.control_points)):
+                if self.control_points[0:self.degree] == self.control_points[i:i + self.degree]:
+                    period = i
+                    break
+
+            # Boehm's algorithm for knot insertion
+            for i in range(index - self.degree + 1):
+                new_control.append(self.control_points[i])
+            for i in range(index - self.degree + 1, index + 1):
+                alpha = (t - self.knots[i]) / (self.knots[(i + self.degree)] - self.knots[i])
+                d = (1 - alpha) * self.control_points[i - 1] + alpha * self.control_points[i]
+                new_control.append(d)
+            for i in range(index, period):
+                new_control.append(self.control_points[i])
+
+            # wrap the first n new control points around the control polygon
+            for i in range(self.degree):
+                new_control.append(new_control[i])
+
+            # adjust control points and insert the new knot
+            self.control_points = new_control
+            self.knots.insert(t)
+
+            # find index of the first repeated knot
+            period_index = self.knots.knot_index(self.degree + period)
+            new_knots.extend(self.knots[:period + 2])
+            for i in range(len_new_knots - len(new_knots)):
+                diff = self.knots[i + 1] - self.knots[i]
+                new_knot = new_knots[-1] + diff
+                new_knots.append(new_knot)
+
+            # assign new knots to the spline
+            knot_obj = knots(len(new_knots))
+            knot_obj.knots = new_knots
+
+            self.knots = knot_obj
+
+        else:
+            # Boehm's algorithm for knot insertion
+            for i in range(index - self.degree + 1):
+                new_control.append(self.control_points[i])
+            for i in range(index - self.degree + 1, index + 1):
+                alpha = (t - self.knots[i]) / (self.knots[(i + self.degree)] - self.knots[i])
+                d = (1 - alpha) * self.control_points[i - 1] + alpha * self.control_points[i]
+                new_control.append(d)
+            for i in range(index, len(self.control_points)):
+                new_control.append(self.control_points[i])
+
+            # adjust control points and insert the new knot
+            self.control_points = new_control
+            self.knots.insert(t)
 
     def get_axis_aligned_bounding_box(self):
         min_vec = copy.copy(self.control_points[0])
@@ -259,7 +305,7 @@ class spline:
         degree = 3
         spline_obj = spline(degree)
         spline_obj.knots = knots(1)
-        spline_obj.knots.knots = list(range(-degree - 1, m + degree + 1))
+        spline_obj.knots.knots = list(range(m + 2 * degree + 2))
 
         diag1 = diag3 = [1 / 6] * (m + 1)
         diag2 = [4 / 6] * (m + 1)
@@ -326,7 +372,7 @@ class spline:
     def generate_rotation_surface(self, num_samples):
         surface = spline_surface((self.degree, self.degree))
         surface_control_points = []
-
+        print("len self.control points", len(self.control_points))
         for d_i in self.control_points:
             z = d_i.y
             c_i = []
@@ -350,10 +396,6 @@ class spline:
         surface.periodic = (True, False)
 
         return surface
-
-
-def binomial(n, k):
-    return np.math.factorial(n) // np.math.factorial(k) // np.math.factorial(n - k)
 
 
 class spline_surface:
@@ -492,6 +534,10 @@ class spline_surface:
 
         inner_u_knots = copy.deepcopy(u_knots[m:len(u_knots) - m + 2])
         print(*inner_u_knots)
+        print(*inner_v_knots)
+        print("LEN U", len(inner_u_knots))
+        print("LEN V", len(inner_v_knots))
+
         for i in range(len(inner_u_knots)):
             knot = inner_u_knots[i]
             p = self.knots[spline_surface.DIR_U].knots.count(knot)
@@ -504,9 +550,10 @@ class spline_surface:
             p = self.knots[spline_surface.DIR_V].knots.count(knot)
             for x in range(n - p):
                 self.insert_knot(spline_surface.DIR_V, knot)
+        print(*self.knots[1])
 
-        for i in range(0, len(self.control_points)-m, m):
-            for j in range(0, len(self.control_points[i])-n, n):
+        for i in range(0, len(self.control_points) - m, m):
+            for j in range(0, len(self.control_points[i]) - n, n):
                 new_patch = bezier_surface(self.degree)
                 new_control = [[None] * (n + 1) for _ in range(m + 1)]
                 for k in range(m + 1):
@@ -516,7 +563,6 @@ class spline_surface:
 
                 new_patch.control_points = new_control
                 patches.append(new_patch)
-
         return patches
 
 
@@ -561,5 +607,4 @@ class knots:
         for i in range(len(self.knots) - 1):
             if self.knots[i] <= v < self.knots[i + 1]:
                 return i
-
-        RuntimeError("Assertion Error")
+        return len(self.knots) - 1

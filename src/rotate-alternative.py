@@ -33,11 +33,15 @@ surface = spl.generate_rotation_surface(8)
 v = viewer3d()
 # show control points of rotated surface
 cps = [pt for pts in surface.control_points for pt in pts]
+print("number cps before",len(cps))
 v.display_points(cps, vec3(0, 0, 0), "red")
 
 bezier_patches = surface.to_bezier_patches()
+print("number of U control points:", len(surface.control_points))
+print("number of V control points:", len(surface.control_points[0]))
 # show points of bezier patches
 cps = [pt for pts in surface.control_points for pt in pts]
+print("total cps",len(cps))
 v.display_points(cps, vec3(0, 0, 0), "green")
 v.display_object(bezier_patches, vec3(0, 0, 0))
 
