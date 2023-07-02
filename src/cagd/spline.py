@@ -107,20 +107,32 @@ class spline:
                     period = i
                     break
 
-        if self.periodic:
             # Boehm's algorithm for knot insertion
             for i in range(index - self.degree + 1):
                 new_control.append(self.control_points[i])
-            for i in range(index - self.degree + 1, index + 1):
-                alpha = (t - self.knots[i]) / (self.knots[(i + self.degree)] - self.knots[i])
-                d = (1 - alpha) * self.control_points[i - 1] + alpha * self.control_points[i]
-                new_control.append(d)
 
-            new_control.extend(self.control_points[index:period])
+            #for i in range(index - self.degree + 1, index + 1):
+                #alpha = (t - self.knots[i]) / (self.knots[(i + self.degree)] - self.knots[i])
+                #d = (1 - alpha) * self.control_points[i - 1] + alpha * self.control_points[i]
+                #new_control.append(d)
 
-            # wrap the first n new control points around the control polygon
-            for i in range(self.degree):
-                new_control[-self.degree + i] = new_control[i]
+            deboor = self.de_boor(t,self.degree)
+            new_control.extend(self.de_boor(t, self.degree))
+
+            # find the first newly calculated control point
+            fst_new_elem = None
+            for i in range(len(self.control_points)):
+                if abs(self.control_points[i] - new_control[i]) >= 0.000000001:
+                    fst_new_elem = i
+                    last_new_elem = i + self.degree -1
+                    break
+
+            if last_new_elem <= period:
+                new_control.extend(self.control_points[last_new_elem:period])
+                new_control.extend(new_control[:self.degree])
+            else:
+                new_control.extend(self.control_points[last_new_elem:])
+                new_control[:self.degree] = new_control[period+1:]
 
             # adjust control points and insert the new knot
             self.control_points = new_control

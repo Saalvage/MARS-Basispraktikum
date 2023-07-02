@@ -38,7 +38,7 @@ v.display_points(cps, vec3(0, 0, 0), "red")
 
 bezier_patches = surface.to_bezier_patches()
 for pt in surface.control_points[0]:
-    print("({0:.4f}, {0:.4f}, {0:.4f})".format(pt.x, pt.y, pt.z), end=' \n')
+    print("({0:.4f}, {1:.4f}, {2:.4f})".format(pt.x, pt.y, pt.z))
 print("number of U control points:", len(surface.control_points))
 print("number of V control points:", len(surface.control_points[0]))
 # show points of bezier patches
