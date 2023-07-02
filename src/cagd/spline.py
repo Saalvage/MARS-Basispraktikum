@@ -93,12 +93,12 @@ class spline:
         new_control = []
         new_knots = []
         len_new_knots = len(self.knots) + 1
-        len_new_control = len(self.control_points) + 1
         period = 0
 
-        # assert that t is supported
-        # a, b = self.support()
-        # assert (a <= t <= b)
+        # calculate control points up to the last element of the second column in de boor
+        for i in range(index - self.degree + 1):
+            new_control.append(self.control_points[i])
+        new_control.extend(self.de_boor(t, self.degree))
 
         if self.periodic:
             # determine period
@@ -107,43 +107,28 @@ class spline:
                     period = i
                     break
 
-            # Boehm's algorithm for knot insertion
-            for i in range(index - self.degree + 1):
-                new_control.append(self.control_points[i])
-
-            #for i in range(index - self.degree + 1, index + 1):
-                #alpha = (t - self.knots[i]) / (self.knots[(i + self.degree)] - self.knots[i])
-                #d = (1 - alpha) * self.control_points[i - 1] + alpha * self.control_points[i]
-                #new_control.append(d)
-
-            deboor = self.de_boor(t,self.degree)
-            new_control.extend(self.de_boor(t, self.degree))
-
             # find the first newly calculated control point
-            fst_new_elem = None
+            last_new_elem = None
             for i in range(len(self.control_points)):
                 if abs(self.control_points[i] - new_control[i]) >= 0.000000001:
-                    fst_new_elem = i
-                    last_new_elem = i + self.degree -1
+                    last_new_elem = i + self.degree - 1
                     break
 
+            # wrap the new control points around the control polygon
             if last_new_elem <= period:
                 new_control.extend(self.control_points[last_new_elem:period])
                 new_control.extend(new_control[:self.degree])
             else:
                 new_control.extend(self.control_points[last_new_elem:])
-                new_control[:self.degree] = new_control[period+1:]
+                new_control[:self.degree] = new_control[period + 1:]
 
             # adjust control points and insert the new knot
             self.control_points = new_control
             self.knots.insert(t)
 
-            assert (len(self.knots) == len_new_knots)
-            assert (len(self.control_points) == len_new_control)
-
             # find index of the knot that is repeated first
-            period_index = self.degree + period + 1
-            new_knots.extend(self.knots[:period_index + 1])
+            # to add knots with appropriate intervals to maintain periodicity
+            new_knots.extend(self.knots[:self.degree + period + 2])
             current_len = len(new_knots)
             for i in range(len_new_knots - current_len):
                 diff = self.knots[self.degree + i + 1] - self.knots[self.degree + i]
@@ -156,16 +141,7 @@ class spline:
 
             self.knots = knot_obj
 
-
         else:
-            # Boehm's algorithm for knot insertion
-            for i in range(index - self.degree + 1):
-                new_control.append(self.control_points[i])
-            for i in range(index - self.degree + 1, index + 1):
-                alpha = (t - self.knots[i]) / (self.knots[(i + self.degree)] - self.knots[i])
-                d = (1 - alpha) * self.control_points[i - 1] + alpha * self.control_points[i]
-                new_control.append(d)
-
             new_control.extend(self.control_points[index:])
 
             # adjust control points and insert the new knot
@@ -390,7 +366,6 @@ class spline:
     def generate_rotation_surface(self, num_samples):
         surface = spline_surface((self.degree, self.degree))
         surface_control_points = []
-        print("len self.control points", len(self.control_points))
         for d_i in self.control_points:
             z = d_i.y
             c_i = []
@@ -406,7 +381,7 @@ class spline:
             surface_control_points.append(new_control)
         surface.control_points = surface_control_points
 
-        v_knots = knots(len(surface_control_points[0]) + 2 + 2)
+        v_knots = knots(len(surface_control_points[0]) + self.degree + 1)
         for index in range(len(v_knots.knots)):
             v_knots.knots[index] = index
 
@@ -443,9 +418,6 @@ class spline_surface:
         points1 = len(k1) == p1 + d1 + 1
         points2 = len(k2) == p2 + d2 + 1
 
-        # DEBUG
-        # print(f"points1 : {points1}\t len of k1 = {len(k1)}\t p1 = {p1}\t d1 = {d1}")
-        # print(f"points2 : {points2}\t len of k2 = {len(k2)}\t p2 = {p2}\t d2 = {d2}")
         return knots12 and points1 and points2
 
     def evaluate(self, u, v):
@@ -547,7 +519,6 @@ class spline_surface:
     def to_bezier_patches(self):
         patches = bezier_patches()
         m, n = self.degree
-        print(m, n)
         u_knots, v_knots = self.knots
 
         inner_u_knots = u_knots[m:len(u_knots) - m]
@@ -557,22 +528,12 @@ class spline_surface:
             for x in range(m - p):
                 self.insert_knot(spline_surface.DIR_U, knot)
 
-        inner_v_knots = v_knots[n:len(self.knots[spline_surface.DIR_V]) - n - 1]
+        inner_v_knots = v_knots[n:len(v_knots) - n - 1]
         for i in range(len(inner_v_knots)):
             knot = inner_v_knots[i]
             p = self.knots[spline_surface.DIR_V].knots.count(knot)
             for x in range(n - p):
                 self.insert_knot(spline_surface.DIR_V, knot)
-
-        """for i in range(n*n):
-            knot = self.knots[spline_surface.DIR_V][i]
-            p = self.knots[spline_surface.DIR_V].knots.count(knot)
-            for i in range(n-p):
-
-                self.knots[spline_surface.DIR_V].insert(knot)
-                for v in v_knots:
-                    for u in u_knots:
-                        new_control = self.evaluate(v,u)"""
 
         for i in range(0, len(self.control_points) - m, m):
             for j in range(0, len(self.control_points[i]) - n, n):

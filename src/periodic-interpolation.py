@@ -52,8 +52,8 @@ p = s.get_polyline_from_control_points()
 p.set_color("blue")
 sc = scene.scene()
 sc.set_resolution(900)
-#sc.add_element(s)
-#sc.add_element(p)
+sc.add_element(s)
+sc.add_element(p)
 
 # generate a spline that approximates the unit circle
 n = 8
@@ -62,39 +62,16 @@ pts_line2 = polyline()
 pts_line2.points = circle_pts.copy()
 pts_line2.points.append(pts_line2.points[0])
 pts_line2.set_color("red")
-#sc.add_element(pts_line2)
+sc.add_element(pts_line2)
 
 
-# original interpolation
+
 circle = spline.interpolate_cubic_periodic(circle_pts)
 
 
-print(len(circle_pts), "circle_pts")
-print(len(circle.control_points), "OG control points")
-for point in circle.control_points:
-    print("(", round(point.x, 2), ",", round(point.y, 2), ")")
-print(len(circle.knots), "knots before:", *circle.knots)
-
-control_before = circle.get_polyline_from_control_points()
-control_before.set_color("red")
-#sc.add_element(control_before)
-
-circle.periodic = True
-
-# knot insertion
-circle.insert_knot(3)
-
-print(len(circle.control_points), "resulting control points:")
-for point in circle.control_points:
-    print("(", round(point.x, 2), ",", round(point.y, 2), ")")
-print(len(circle.knots), "knots after:", *circle.knots)
-control_after = circle.get_polyline_from_control_points()
-control_after.set_color("green")
-#sc.add_element(control_after)
-
 
 sc.add_element(circle)
-# calculate_circle_deviation(circle)
+calculate_circle_deviation(circle)
 
 sc.write_image()
 sc.show()
