@@ -67,13 +67,7 @@ pts_line2.set_color("red")
 
 # original interpolation
 circle = spline.interpolate_cubic_periodic(circle_pts)
-print("CIRCLE PERIOD")
-n = 3
-for i in range(n+1,len(circle.knots)):
-    if ((circle(n).x - circle(i).x) <= 0.00001) & ((circle(3).y - circle(i).y) <= 0.001):
-        print("the SAME VALUE is", i)
-        print("and the period SHALL BE", i-n)
-        break
+
 
 print(len(circle_pts), "circle_pts")
 print(len(circle.control_points), "OG control points")
@@ -88,7 +82,8 @@ control_before.set_color("red")
 circle.periodic = True
 
 # knot insertion
-circle.insert_knot(6.5)
+circle.insert_knot(3)
+
 print(len(circle.control_points), "resulting control points:")
 for point in circle.control_points:
     print("(", round(point.x, 2), ",", round(point.y, 2), ")")
