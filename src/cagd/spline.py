@@ -135,6 +135,17 @@ class spline:
                 new_knot = new_knots[-1] + diff
                 new_knots.append(new_knot)
 
+            # check if a knot needs to be inserted in the period before t
+            period_knot_value = self.knots[period] - self.knots[0]
+            t_period = t % period_knot_value
+            if (t_period >= new_knots[0]) & (new_knots.count(t_period) < new_knots.count(t)):
+                new_knots = new_knots[1:]
+                knot_obj = knots(len(new_knots))
+                knot_obj.knots = new_knots
+                knot_obj.insert(t_period)
+                self.knots = knot_obj
+                return
+
             # assign new knots to the spline
             knot_obj = knots(len(new_knots))
             knot_obj.knots = new_knots
