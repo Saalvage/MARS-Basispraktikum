@@ -29,6 +29,9 @@ s3.set_color("#6666ff")
 s4.set_color("#aaaaff")
 p = polyline()
 p.points = pts
+print(len(pts), "pts")
+print(len(s1.control_points), "resutling control points")
+print(len(s1.knots), "and the knots knots")
 p.set_color("red")
 
 # debug = polyline()

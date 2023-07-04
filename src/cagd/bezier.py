@@ -4,6 +4,7 @@ from cagd.vec import vec2, vec3
 from cagd.polyline import polyline
 import copy
 
+
 class bezier_curve:
     def __init__(self, degree):
         assert (degree >= 0)
@@ -19,32 +20,32 @@ class bezier_curve:
         assert (index >= 0 and index <= self.degree)
         return self.control_points[index]
 
-    #evaluates the curve at t
+    # evaluates the curve at t
     def evaluate(self, t):
         return self.__de_casteljeau(t, 1)[0]
 
-    #evaluates tangent at t
+    # evaluates tangent at t
     def tangent(self, t):
         last_two_ctrl_pts = self.__de_casteljeau(t, 2)
         a = last_two_ctrl_pts[0]
         b = last_two_ctrl_pts[1]
         return b - a
 
-    #calculates the normal at t
+    # calculates the normal at t
     def normal(self, t):
         pass
 
-    #syntactic sugar so bezier curve can be evaluated as curve(t)
-    #instead of curve.evaluate(t)
+    # syntactic sugar so bezier curve can be evaluated as curve(t)
+    # instead of curve.evaluate(t)
     def __call__(self, t):
         return self.evaluate(t)
 
-    #calculates the de-casteljeau scheme until the column only has stop elements
+    # calculates the de-casteljeau scheme until the column only has stop elements
     def __de_casteljeau(self, t, stop):
         assert (stop >= 1)
         column = self.control_points
         while len(column) > stop:
-            new_column = [None for i in range(len(column) -1)]
+            new_column = [None for i in range(len(column) - 1)]
             for i in range(len(new_column)):
                 new_column[i] = (1 - t) * column[i] + t * column[i + 1]
             column = new_column
@@ -56,7 +57,7 @@ class bezier_curve:
     def set_color(self, color):
         self.color = color
 
-    #calculates the bezier representation of the derivative
+    # calculates the bezier representation of the derivative
     def get_derivative(self):
         pass
 
@@ -90,14 +91,14 @@ class bezier_curve:
 
 
 class bezier_surface:
-    #creates a bezier surface of degrees n,m
-    #the degree parameter is a tuple (n,m)
+    # creates a bezier surface of degrees n,m
+    # the degree parameter is a tuple (n,m)
     def __init__(self, degree):
         d1, d2 = degree
         assert (d1 >= 0 and d2 >= 0)
         self.degree = degree
         self.control_points = [[None for i in range(d2 + 1)] for j in range(d1 + 1)]
-        white = (1,1,1)
+        white = (1, 1, 1)
         self.color = (white, white, white, white)
         self.curvature = (None, None, None, None)
 
@@ -114,14 +115,14 @@ class bezier_surface:
     def evaluate(self, t1, t2):
         return self.__de_casteljeau(t1, t2, (1, 1))[0][0]
 
-    #sets the colors at the corners
-    #c00 is the color at u=v=0, c01 is the color at u=0 v=1, etc
-    #a color is a tuple (r,g,b) with values between 0 an 1
+    # sets the colors at the corners
+    # c00 is the color at u=v=0, c01 is the color at u=0 v=1, etc
+    # a color is a tuple (r,g,b) with values between 0 an 1
     def set_colors(self, c00, c01, c10, c11):
         self.color = (c00, c01, c10, c11)
 
-    #sets the curvature at the corners
-    #c00 is the curvature at u=v=0, c01 is the curvature at u=0 v=1, etc
+    # sets the curvature at the corners
+    # c00 is the curvature at u=v=0, c01 is the curvature at u=0 v=1, etc
     def set_curvature(self, c00, c01, c10, c11):
         self.curvature = (c00, c01, c10, c11)
 
@@ -133,11 +134,11 @@ class bezier_surface:
         s1, s2 = stop
         d1, d2 = self.degree
         assert (s1 >= 1 and s2 >= 1)
-        d1 += 1 #number of control points in each direction
+        d1 += 1  # number of control points in each direction
         d2 += 1
 
-        #apply the casteljeau scheme in one direction,
-        #ie, reduce dimension from (d1, d2) to (s1, d2)
+        # apply the casteljeau scheme in one direction,
+        # ie, reduce dimension from (d1, d2) to (s1, d2)
         column = self.control_points
         while d1 > s1:
             d1 -= 1
@@ -147,8 +148,8 @@ class bezier_surface:
                     new_column[i][j] = (1 - t1) * column[i][j] + t1 * column[i + 1][j]
             column = new_column
 
-        #apply the casteljeau scheme in the other direction,
-        #ie, reduce dimension from (s1, d2) to (s1, s2)
+        # apply the casteljeau scheme in the other direction,
+        # ie, reduce dimension from (s1, d2) to (s1, s2)
         while d2 > s2:
             d2 -= 1
             new_column = [[None for i in range(d2)] for j in range(d1)]
@@ -166,39 +167,38 @@ class bezier_surface:
         pass
 
     def subdivide(self, t1, t2):
-        b0,b1 = self.__subdivide_u(t1)
-        b00,b01 = b0.__subdivide_v(t2)
-        b10,b11 = b1.__subdivide_v(t2)
+        b0, b1 = self.__subdivide_u(t1)
+        b00, b01 = b0.__subdivide_v(t2)
+        b10, b11 = b1.__subdivide_v(t2)
         return [b00, b01, b10, b11]
 
     def __subdivide_u(self, t):
         du, dv = self.degree
         left = bezier_surface((du, dv))
         right = bezier_surface((du, dv))
-        for k in range(du+1):
-            pts = self.__de_casteljeau(t, 0, (du-k+1, dv+1))
+        for k in range(du + 1):
+            pts = self.__de_casteljeau(t, 0, (du - k + 1, dv + 1))
             left.control_points[k] = pts[0]
-            right.control_points[-(k+1)] = pts[-1]
+            right.control_points[-(k + 1)] = pts[-1]
         return (left, right)
 
     def __subdivide_v(self, t):
         du, dv = self.degree
         left = bezier_surface((du, dv))
         right = bezier_surface((du, dv))
-        for k in range(dv+1):
-            pts = self.__de_casteljeau(0, t, (du+1, dv-k+1))
-            for i in range(du+1):
+        for k in range(dv + 1):
+            pts = self.__de_casteljeau(0, t, (du + 1, dv - k + 1))
+            for i in range(du + 1):
                 left.control_points[i][k] = pts[i][0]
-                right.control_points[i][-(k+1)] = pts[i][-1]
+                right.control_points[i][-(k + 1)] = pts[i][-1]
         return (left, right)
-        
 
 
 class bezier_patches:
     CURVATURE_GAUSSIAN = 0
     CURVATURE_AVERAGE = 1
-    CURVATURE_PRINCIPAL_MAX = 2 #Maximale Hauptkruemmung
-    CURVATURE_PRINCIPAL_MIN = 3 #Minimale Hauptkruemmung
+    CURVATURE_PRINCIPAL_MAX = 2  # Maximale Hauptkruemmung
+    CURVATURE_PRINCIPAL_MIN = 3  # Minimale Hauptkruemmung
     COLOR_MAP_LINEAR = 4
     COLOR_MAP_CUT = 5
     COLOR_MAP_CLASSIFICATION = 6
@@ -224,8 +224,8 @@ class bezier_patches:
     def append(self, p):
         self.patches.append(p)
 
-    #refines patches by subdividing each patch into four new patches
-    #there are 4^num times more patches after calling this function
+    # refines patches by subdividing each patch into four new patches
+    # there are 4^num times more patches after calling this function
     def refine(self, num):
         for i in range(num):
             new_patches = bezier_patches()
@@ -236,8 +236,8 @@ class bezier_patches:
             self.patches = new_patches
 
     def visualize_curvature(self, curvature_mode, color_map):
-        #calculate curvatures at each corner point
-        #set colors according to color map
+        # calculate curvatures at each corner point
+        # set colors according to color map
         pass
 
     def export_off(self):
@@ -249,18 +249,18 @@ class bezier_patches:
             for x in c:
                 s += str(x)
                 s += " "
-            s += "1" #opacity
+            s += "1"  # opacity
             return s
 
         s = "CBEZ333\n"
         for patch in self:
-            #coordinates
+            # coordinates
             for row in patch.control_points:
                 for p in row:
                     s += export_point(p)
                     s += "\n"
 
-            #colors
+            # colors
             s += export_colors(patch.color[0])
             s += "\n"
             s += export_colors(patch.color[2])
@@ -276,11 +276,11 @@ class bezier_patches:
     def export_standard_off(self):
         def export_numbers(degree):
             d1, d2 = degree
-            n_v = (d1 + 1)*(d2 + 1)
-            n_f = d1*d2
-            n_e = d1*(d2 + 1) + d2*(d1 + 1)
+            n_v = (d1 + 1) * (d2 + 1)
+            n_f = d1 * d2
+            n_e = d1 * (d2 + 1) + d2 * (d1 + 1)
             patch_num = len(self)
-            return str(n_v*patch_num) + " " + str(n_f*patch_num) + " " + str(n_e*patch_num) + "\n"
+            return str(n_v * patch_num) + " " + str(n_f * patch_num) + " " + str(n_e * patch_num) + "\n"
 
         def export_vertex(v):
             return str(v.x) + " " + str(v.y) + " " + str(v.z) + "\n"
@@ -298,9 +298,9 @@ class bezier_patches:
                 avg_f_c[0] += f_c[0]
                 avg_f_c[1] += f_c[1]
                 avg_f_c[2] += f_c[2]
-            return (round(255*avg_f_c[0]/4),
-                    round(255*avg_f_c[1]/4),
-                    round(255*avg_f_c[2]/4))
+            return (round(255 * avg_f_c[0] / 4),
+                    round(255 * avg_f_c[1] / 4),
+                    round(255 * avg_f_c[2] / 4))
 
         def export_color(f_c):
             return " " + str(f_c[0]) + " " + str(f_c[1]) + " " + str(f_c[2]) + "\n"
@@ -319,7 +319,7 @@ class bezier_patches:
             col_num = len(cps[0])
             for row in range(row_num - 1):
                 for col in range(col_num - 1):
-                    first_v = start_v + row*col_num + col
+                    first_v = start_v + row * col_num + col
                     f_vertices = (first_v, first_v + 1, first_v + 1 + col_num, first_v + col_num)
                     s += export_face(f_vertices)
                     s += export_color(avg_color(patch.color))

@@ -45,8 +45,8 @@ def calculate_circle_deviation(spline):
 # interpolate 6 points with a periodic spline to create the number "8"
 pts = [vec2(0, 2.5), vec2(-1, 1), vec2(1, -1), vec2(0, -2.5), vec2(-1, -1), vec2(1, 1)]
 pts_line = polyline()
-pts_line.points = pts
-pts_line.set_color("red")
+# pts_line.points = pts
+# pts_line.set_color("red")
 s = spline.interpolate_cubic_periodic(pts)
 p = s.get_polyline_from_control_points()
 p.set_color("blue")
@@ -63,7 +63,13 @@ pts_line2.points = circle_pts.copy()
 pts_line2.points.append(pts_line2.points[0])
 pts_line2.set_color("red")
 sc.add_element(pts_line2)
+
+
+
 circle = spline.interpolate_cubic_periodic(circle_pts)
+
+
+
 sc.add_element(circle)
 calculate_circle_deviation(circle)
 

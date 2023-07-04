@@ -1,6 +1,8 @@
 #! /usr/bin/python
 
 import math
+
+import numpy as np
 from cagd.vec import vec2, vec3
 from cagd.polyline import polyline
 from cagd.bezier import bezier_surface, bezier_patches
@@ -25,7 +27,7 @@ class spline:
         self.control_points = []
         self.color = "black"
 
-    # checks if the number of knots, controlpoints and degree define a valid spline
+    # checks if the number of knots, control points and degree define a valid spline
     def validate(self):
         knots = self.knots.validate()
         points = len(self.knots) == len(self.control_points) + self.degree + 1
@@ -87,21 +89,75 @@ class spline:
     # adjusts the control points such that it represents the same function,
     # but with an added knot
     def insert_knot(self, t):
-        n = self.degree
         index = self.knots.knot_index(t)
-        knot_vector = self.knots
-        control = self.control_points
-        new_control = self.control_points[:index - n + 1]
+        new_control = []
+        new_knots = []
+        len_new_knots = len(self.knots) + 1
+        period = 0
 
-        for j in range(index - n + 1, index + 1):
-            alpha = (t - knot_vector[j]) / (knot_vector[j + n] - knot_vector[j])
-            d = (1 - alpha) * control[j - 1] + alpha * control[j]
-            new_control.append(d)
+        # calculate control points up to the last element of the second column in de boor
+        for i in range(index - self.degree + 1):
+            new_control.append(self.control_points[i])
+        new_control.extend(self.de_boor(t, self.degree))
 
-        new_control.extend(self.control_points[index:])
+        if self.periodic:
+            # determine period
+            for i in range(1, len(self.control_points)):
+                if self.control_points[0:self.degree] == self.control_points[i:i + self.degree]:
+                    period = i
+                    break
 
-        self.control_points = new_control
-        self.knots.insert(t)
+            # find the first newly calculated control point
+            last_new_elem = None
+            for i in range(len(self.control_points)):
+                if abs(self.control_points[i] - new_control[i]) >= 0.000000001:
+                    last_new_elem = i + self.degree - 1
+                    break
+
+            # wrap the new control points around the control polygon
+            if last_new_elem <= period:
+                new_control.extend(self.control_points[last_new_elem:period])
+                new_control.extend(new_control[:self.degree])
+            else:
+                new_control.extend(self.control_points[last_new_elem:])
+                new_control[:self.degree] = new_control[period + 1:]
+
+            # adjust control points and insert the new knot
+            self.control_points = new_control
+            self.knots.insert(t)
+
+            # find index of the knot that is repeated first
+            # to add knots with appropriate intervals to maintain periodicity
+            new_knots.extend(self.knots[:self.degree + period + 2])
+            current_len = len(new_knots)
+            for i in range(len_new_knots - current_len):
+                diff = self.knots[self.degree + i + 1] - self.knots[self.degree + i]
+                new_knot = new_knots[-1] + diff
+                new_knots.append(new_knot)
+
+            # check if a knot needs to be inserted in the period before t
+            period_knot_value = self.knots[period] - self.knots[0]
+            t_period = t % period_knot_value
+            if (t_period >= new_knots[0]) & (new_knots.count(t_period) < new_knots.count(t)):
+                new_knots = new_knots[1:]
+                knot_obj = knots(len(new_knots))
+                knot_obj.knots = new_knots
+                knot_obj.insert(t_period)
+                self.knots = knot_obj
+                return
+
+            # assign new knots to the spline
+            knot_obj = knots(len(new_knots))
+            knot_obj.knots = new_knots
+
+            self.knots = knot_obj
+
+        else:
+            new_control.extend(self.control_points[index:])
+
+            # adjust control points and insert the new knot
+            self.control_points = new_control
+            self.knots.insert(t)
 
     def get_axis_aligned_bounding_box(self):
         min_vec = copy.copy(self.control_points[0])
@@ -171,7 +227,7 @@ class spline:
         if mode == spline.INTERPOLATION_FOLEY:
             spline_obj.knots.knots = [0.0, 0.0, 0.0] + [0.0]
 
-            # d_i from -1 to m 
+            # d_i from -1 to m
             d_i = [None for _ in range(len(points))]
             for i in range(len(d_i) - 1):
                 d_i[i] = abs(points[i + 1] - points[i])
@@ -254,7 +310,7 @@ class spline:
         degree = 3
         spline_obj = spline(degree)
         spline_obj.knots = knots(1)
-        spline_obj.knots.knots = list(range(-degree - 1, m + degree + 1))
+        spline_obj.knots.knots = list(range(m + 2 * degree + 2))
 
         diag1 = diag3 = [1 / 6] * (m + 1)
         diag2 = [4 / 6] * (m + 1)
@@ -319,7 +375,31 @@ class spline:
     # num_samples refers to the number of interpolation points in the rotational direction
     # returns a spline surface object in three dimensions
     def generate_rotation_surface(self, num_samples):
-        pass
+        surface = spline_surface((self.degree, self.degree))
+        surface_control_points = []
+        for d_i in self.control_points:
+            z = d_i.y
+            c_i = []
+
+            for j in range(num_samples):
+                x = d_i.x * cos(2.0 * pi * j / num_samples)
+                y = d_i.x * sin(2.0 * pi * j / num_samples)
+                c_i.append(vec2(x, y))
+            periodic = spline.interpolate_cubic_periodic(c_i)
+            new_control = []
+            for point in periodic.control_points:
+                new_control.append(vec3(point.x, point.y, z))
+            surface_control_points.append(new_control)
+        surface.control_points = surface_control_points
+
+        v_knots = knots(len(surface_control_points[0]) + self.degree + 1)
+        for index in range(len(v_knots.knots)):
+            v_knots.knots[index] = index
+
+        surface.knots = (self.knots, v_knots)
+        surface.periodic = (False, True)
+
+        return surface
 
 
 class spline_surface:
@@ -348,6 +428,7 @@ class spline_surface:
         p2 = len(self.control_points[0])
         points1 = len(k1) == p1 + d1 + 1
         points2 = len(k2) == p2 + d2 + 1
+
         return knots12 and points1 and points2
 
     def evaluate(self, u, v):
@@ -448,6 +529,34 @@ class spline_surface:
     # and control points sitting also as bezier points.
     def to_bezier_patches(self):
         patches = bezier_patches()
+        m, n = self.degree
+        u_knots, v_knots = self.knots
+
+        inner_u_knots = u_knots[m:len(u_knots) - m]
+        for i in range(len(inner_u_knots)):
+            knot = inner_u_knots[i]
+            p = self.knots[spline_surface.DIR_U].knots.count(knot)
+            for x in range(m - p):
+                self.insert_knot(spline_surface.DIR_U, knot)
+
+        inner_v_knots = v_knots[n:len(v_knots) - n - 1]
+        for i in range(len(inner_v_knots)):
+            knot = inner_v_knots[i]
+            p = self.knots[spline_surface.DIR_V].knots.count(knot)
+            for x in range(n - p):
+                self.insert_knot(spline_surface.DIR_V, knot)
+
+        for i in range(0, len(self.control_points) - m, m):
+            for j in range(0, len(self.control_points[i]) - n, n):
+                new_patch = bezier_surface(self.degree)
+                new_control = [[None] * (n + 1) for _ in range(m + 1)]
+                for k in range(m + 1):
+                    for l in range(n + 1):
+                        new_control[k][l] = self.control_points[(i + k) % len(self.control_points)][
+                            (j + l) % len(self.control_points[i])]
+
+                new_patch.control_points = new_control
+                patches.append(new_patch)
         return patches
 
 
@@ -489,8 +598,7 @@ class knots:
         self.knots.insert(i, t)
 
     def knot_index(self, v):
-        for i in range(len(self.knots)):
+        for i in range(len(self.knots) - 1):
             if self.knots[i] <= v < self.knots[i + 1]:
                 return i
-
-        RuntimeError("Assertion Error")
+        return len(self.knots) - 1
