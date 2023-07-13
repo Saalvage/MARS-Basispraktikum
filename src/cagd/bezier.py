@@ -3,6 +3,7 @@
 from cagd.vec import vec2, vec3
 from cagd.polyline import polyline
 import copy
+import math
 
 
 class bezier_curve:
@@ -236,9 +237,88 @@ class bezier_patches:
             self.patches = new_patches
 
     def visualize_curvature(self, curvature_mode, color_map):
-        # calculate curvatures at each corner point
+        for p in self.patches:
+            # calculate curvatures at each corner point
+            n = p.degree[0]
+            m = p.degree[1]
+            
+            Bbu = bezier_surface((m-1,n))
+            for i in range(m):
+                for j in range(n+1):
+                    Bbu.set_control_point(i, j, m * (p.control_points[i + 1][j] - p.control_points[i][j]))
+
+            Bbv = bezier_surface((m,n-1))
+            for i in range(m+1):
+                for j in range(n):
+                    Bbv.set_control_point(i, j, m * (p.control_points[i][j + 1] - p.control_points[i][j]))
+
+            Bbuu = bezier_surface((m-2, n))
+            for i in range(m-1):
+                for j in range(n+1):
+                    Bbuu.set_control_point(i, j, m * (m - 1) * ((p.control_points[i + 2][j] - p.control_points[i + 1][j])
+                                          - (p.control_points[i + 1][j] - p.control_points[i][j])))
+
+            Bbuv = bezier_surface((m-1,n-1))
+            for i in range(m):
+                for j in range(n):
+                    Bbuv.set_control_point(i, j, m * n * ((p.control_points[i + 1][j + 1] - p.control_points[i + 1][j])
+                                          - (p.control_points[i][j + 1] - p.control_points[i][j])))
+
+            Bbvv = bezier_surface((m, n-2))
+            for i in range(m+1):
+                for j in range(n-1):
+                    Bbvv.set_control_point(i, j, n * (n - 1) * ((p.control_points[i][j + 2] - p.control_points[i][j + 1])
+                                          - (p.control_points[i][j + 1] - p.control_points[i][j])))
+
+            edge_vals = []
+            for i in range(2):
+                for j in range(2):
+                    bu = Bbu.evaluate(i,j)
+                    bv = Bbv.evaluate(i,j)
+                    buu = Bbuu.evaluate(i,j)
+                    buv = Bbuv.evaluate(i,j)
+                    bvv = Bbvv.evaluate(i,j)
+
+                    # cross product
+                    N = vec3(bu.y * bv.z - bu.z * bv.y, bu.z * bv.x - bu.x * bv.z, bu.x * bv.y - bu.y * bv.x)
+                    # normalization
+                    N = N * (1 / math.sqrt(N.dot(N)))
+
+                    e = N.dot(buu)
+                    g = N.dot(bvv)
+                    f = N.dot(buv)
+
+                    E = bu.dot(bu)
+                    G = bv.dot(bv)
+                    F = bu.dot(bv)
+
+                    K = (e * g - f * f) / (E * G - F * F)
+                    H = (0.5 * e * G - 2 * f * F + g * E) / (E * G - F * F)
+
+                    k1 = H + math.sqrt(H * H - K)
+                    k2 = H - math.sqrt(H * H - K)
+                    edge_vals.append(K if curvature_mode == self.CURVATURE_GAUSSIAN else H if curvature_mode == self.CURVATURE_AVERAGE
+                                     else k1 if curvature_mode == self.CURVATURE_PRINCIPAL_MAX else k2)
+
+            p.set_curvature(edge_vals[0], edge_vals[1], edge_vals[2], edge_vals[3])
+
         # set colors according to color map
-        pass
+        h = lambda a : (0, 4 * a, 1) if a <= 0.25 else (0, 1, 2-4 * a) if a <= 0.5 else (4 * a - 2, 1, 0) if a <= 0.75 else (1, 4 - 4 * a, 0)
+
+        if color_map == self.COLOR_MAP_LINEAR:
+            max_k = max([max(p.curvature) for p in self.patches])
+            min_k = min([min(p.curvature) for p in self.patches])
+            diff = max_k - min_k
+            x = lambda a : (a - min_k) / diff
+        elif color_map == self.COLOR_MAP_CUT:
+            x = lambda a : max(0, min(1, a))
+        elif color_map == self.COLOR_MAP_CLASSIFICATION:
+            x = lambda a : 0 if a < 0 else 0.5 if a == 0 else 1
+
+        for p in self.patches:
+            (a,b,c,d) = p.curvature
+            p.set_colors(h(x(a)), h(x(b)), h(x(c)), h(x(d)))
+
 
     def export_off(self):
         def export_point(p):
