@@ -64,7 +64,7 @@ class viewer3d:
         for i in range(len(patches)):
             vec = patches[i].control_points[0][0] + offset
             arrow_start.append([vec.x, vec.y, vec.z])
-            vec = patches[i].normal(0, 0)
+            # vec = patches[i].normal(0, 0)
             arrow_dir.append([vec.x, vec.y, vec.z])
         self.p.add_arrows(np.array(arrow_start), np.array(arrow_dir), mag=1)
 
