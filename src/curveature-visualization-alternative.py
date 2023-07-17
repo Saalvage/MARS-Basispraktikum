@@ -6,7 +6,7 @@ from cagd.vec import vec2, vec3
 from cagd.viewer3d import viewer3d
 import multiprocessing 
 import os
-from cagd.point import point2D
+# from cagd.point import point2D
 
 
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
                 cps.append(pt)
 
         v.display_points(cps, vec3(0,0,0), "black")
-        bezier_patches.visualize_curvature(bezier_patches.CURVATURE_GAUSSIAN, bezier_patches.COLOR_MAP_LINEAR)
+        bezier_patches.visualize_curvature(bezier_patches.CURVATURE_PRINCIPAL_MAX, bezier_patches.COLOR_MAP_LINEAR)
         v.display_normals(bezier_patches, vec3(0,0,0))
 
         v.display_object(bezier_patches, vec3(0,0,0))
