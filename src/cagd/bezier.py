@@ -250,7 +250,7 @@ class bezier_patches:
             Bbv = bezier_surface((m,n-1))
             for i in range(m+1):
                 for j in range(n):
-                    Bbv.set_control_point(i, j, m * (p.control_points[i][j + 1] - p.control_points[i][j]))
+                    Bbv.set_control_point(i, j, n * (p.control_points[i][j + 1] - p.control_points[i][j]))
 
             Bbuu = bezier_surface((m-2, n))
             for i in range(m-1):
@@ -293,7 +293,7 @@ class bezier_patches:
                     F = bu.dot(bv)
 
                     K = (e * g - f * f) / (E * G - F * F)
-                    H = (0.5 * e * G - 2 * f * F + g * E) / (E * G - F * F)
+                    H = 0.5 * ((e * G - 2 * f * F + g * E) / (E * G - F * F))
 
                     k1 = H + math.sqrt(H * H - K)
                     k2 = H - math.sqrt(H * H - K)
