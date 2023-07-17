@@ -101,9 +101,9 @@ if __name__ == "__main__":
             for pt in bezier_patches.patches[i].control_points[0]:
                 cps.append(pt)
 
-        v.display_points(cps, vec3(0,0,0), "black")
+        # v.display_points(cps, vec3(0,0,0), "black")
         bezier_patches.visualize_curvature(bezier_patches.CURVATURE_PRINCIPAL_MAX, bezier_patches.COLOR_MAP_LINEAR)
-        v.display_normals(bezier_patches, vec3(0,0,0))
+        # v.display_normals(bezier_patches, vec3(0,0,0))
 
         v.display_object(bezier_patches, vec3(0,0,0))
         v.show()
