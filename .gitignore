@@ -1,3 +1,4 @@
 src/cagd/__pycache__
 src/*.png
 src/surfaces.off
+*.pyc
