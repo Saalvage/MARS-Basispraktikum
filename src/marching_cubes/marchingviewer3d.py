@@ -19,7 +19,16 @@ class viewer3d:
             # print(f"{vert}")
             colors.append((0.5 * sin(vert.x) + 0.5, 0.5 * sin(vert.y) + 0.5, 0.5 * sin(vert.z) + 0.5 ))
             verts.append((vert.x, vert.y, vert.z))
-
+        
+        for i in verts:
+            print(i)    
+        
+        for i in faces:
+            print(i)
+            
+        print(f"\nVERTS: {len(verts)}\n")
+        print(f"\nFACES: {len(faces)}\n")
+        
         return verts, faces, colors
 
     def display_marching_cube(self, mc, offset):
