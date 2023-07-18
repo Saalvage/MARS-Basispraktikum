@@ -42,6 +42,9 @@ class vec3:
 	def __hash__(self):
 		return hash((self.x, self.y, self.z))
 
+	def __repr__(self) -> str:
+		return f"({self.x: .5f}\t{self.y: .5f}\t{self.z: .5f})"
+
 def vec_from_list(l):
     return vec3(l[0], l[1], l[2])
 

@@ -24,7 +24,7 @@ class marching:
 LENGTH = 1
 ISOVAL = 1  # iso-value
 SUBDIV = 32  # resolution
-SHOW_SINGLE = False
+SHOW_SINGLE = True
 
 def sphere(vec):
     return abs(vec)
@@ -50,8 +50,99 @@ def march_cubes(data):
     subdiv = data[2]
     isoval = data[3]
     function = data[4]
+        
+    net = [[[None for _ in range(2 * length * subdiv)] for _ in range(2 * length * subdiv)] for _ in range(2 * length * subdiv)]
+    
+    for i in range(len(net)):
+        for j in range(len(net[i])):
+            for k in range(len(net[j])):
+                net[i][j][k] = function((1/subdiv) * vec3(i - length, j - length, k - length)) - isoval
 
+    
+    bitflags = [[[None for _ in range(2 * length * subdiv - 1)] for _ in range(2 * length * subdiv - 1)] for _ in range(2 * length * subdiv - 1)]
+    
+    for i in range(len(bitflags)):
+        for j in range(len(bitflags[i])):
+            for k in range(len(bitflags[j])):
+                flag = [0 for i in range(8)]
+                
+                if net[i    ][j    ][k    ] > 0: flag[0] = 1
+                if net[i + 1][j    ][k    ] > 0: flag[1] = 1
+                if net[i    ][j + 1][k    ] > 0: flag[2] = 1
+                if net[i + 1][j + 1][k    ] > 0: flag[3] = 1
+                
+                if net[i    ][j    ][k + 1] > 0: flag[4] = 1
+                if net[i + 1][j    ][k + 1] > 0: flag[5] = 1
+                if net[i    ][j + 1][k + 1] > 0: flag[6] = 1
+                if net[i + 1][j + 1][k + 1] > 0: flag[7] = 1
+                
+                bitflags[i][j][k] = flag
+                
+    for i in range(len(bitflags)):
+        for j in range(len(bitflags[i])):
+            for k in range(len(bitflags[j])):
+                edge_bitflag = to_edge_bitflag(bitflag=bitflags[i][j][k])
+                triangels = cube.CubeTriangles[bitflag_to_int(bitflags[i][j][k])]
+                vertices = [None for _ in range(12)]
+                
+                for e in range(len(edge_bitflag)):
+                    if edge_bitflag[e] == 1:
+                        x1, y1, z1 = edge_offset(cube.CubeEdges[e][0]) 
+                        x2, y2, z2 = edge_offset(cube.CubeEdges[e][1]) 
+                        
+                        v_1 = net[i+x1][j+y1][k+z1]
+                        v_2 = net[i+x2][j+y2][k+z2]
+                        
+                        p_1 = (1.0 / subdiv) * vec3(i + x1 - length, j + y1 - length, k+ z1 - length)
+                        p_2 = (1.0 / subdiv) * vec3(i + x2 - length, j + y2 - length, k+ z2 - length)
+                        
+                        vertices[e] = (v_1 * p_2) - (v_2 * p_1) * (1.0 / (v_1 - v_2))
+                        # print(  f"vertex value = {vertices[e]}\n"
+                        #       + f"v_1 = {v_1}\tv_2 = {v_2}\n"
+                        #       + f"p_1 = {p_1}\tp_2 = {p_2}\n")
+
+                count = 0
+                while(triangels[count]!= -1):
+                    v_len = len(marching.vertices)
+                    temp = [3, triangels[count] + v_len, triangels[count + 1] + v_len, triangels[count + 2] + v_len]
+
+                    marching.faces += temp
+                    marching.vertices += [vertices[temp[1] - v_len]]
+                    marching.vertices += [vertices[temp[2] - v_len]]
+                    marching.vertices += [vertices[temp[3] - v_len]]
+                    count += 3
+    
     return data
+
+def bitflag_to_int(bitflag):
+    bitflag_int = 0
+    for i in range(len(bitflag)):
+        if bitflag[i] == 1:
+            bitflag_int += 2 ** i
+    return bitflag_int
+
+def to_edge_bitflag(bitflag):
+    edge_bitflag = [0 for _ in range(12)]
+    count = 0
+    for verts in cube.CubeEdges:
+        if bitflag[verts[0]] != bitflag[verts[1]]:
+            edge_bitflag[count] = 1
+        count += 1
+        
+    return edge_bitflag
+
+def edge_offset(point):
+    if point == 0: return (0, 0, 0)
+    if point == 1: return (1, 0, 0)
+    if point == 2: return (1, 1, 0)
+    if point == 3: return (0, 1, 0)
+    
+    if point == 4: return (0, 0, 1)
+    if point == 5: return (1, 0, 1)
+    if point == 6: return (1, 1, 1)
+    if point == 7: return (0, 1, 1)
+    
+    RuntimeError("Assertion not met")
 
 if __name__ == "__main__":
     if SHOW_SINGLE:

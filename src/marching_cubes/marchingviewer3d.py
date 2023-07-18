@@ -16,6 +16,7 @@ class viewer3d:
         colors = []
         verts = []
         for vert in vertices:
+            # print(f"{vert}")
             colors.append((0.5 * sin(vert.x) + 0.5, 0.5 * sin(vert.y) + 0.5, 0.5 * sin(vert.z) + 0.5 ))
             verts.append((vert.x, vert.y, vert.z))
 
