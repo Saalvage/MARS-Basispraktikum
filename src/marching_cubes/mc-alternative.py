@@ -24,7 +24,7 @@ class marching:
 LENGTH = 1
 ISOVAL = 1  # iso-value
 SUBDIV = 32  # resolution
-SHOW_SINGLE = True
+SHOW_SINGLE = False
 
 def sphere(vec):
     return abs(vec)
@@ -53,6 +53,7 @@ def march_cubes(data):
         
     net = [[[None for _ in range(subdiv+1)] for _ in range(subdiv+1)] for _ in range(subdiv+1)]
     
+    # calculate values of the function
     for i in range(subdiv+1):
         for j in range(subdiv+1):
             for k in range(subdiv+1):
@@ -65,24 +66,31 @@ def march_cubes(data):
             for k in range(len(net) - 1):
                 cube_flag = [1 for _ in range(8)]
                 
+                # calculate cube bitflag
                 for p in range(8):
-                    x, y, z = edge_offset(p)
+                    x, y, z = corner_offset(p)
                     if net[i + x][j + y][k + z] - isoval >= 0.0: cube_flag[p] = 0
                 
+                # if the cube is empty, skip
                 int_cube_flag = bitflag_to_int(cube_flag)
                 if int_cube_flag == 0 or int_cube_flag == 255:
                     continue
                 
+                # init the array a and load in triangle list
                 a_array = [None for _ in range(12)]
                 triangle_list = cube.CubeTriangles[int_cube_flag]
                 
                 for v in range(len(cube.CubeEdges)):
                     vert_1 = cube.CubeEdges[v][0]
                     vert_2 = cube.CubeEdges[v][1]
+                    
+                    # skip edges without intersection
                     if cube_flag[vert_1] == cube_flag[vert_2]:
                         continue
-                    x1, y1, z1 = edge_offset(vert_1) 
-                    x2, y2, z2 = edge_offset(vert_2)
+                    
+                    # calculate the intersection point and load it into the array a 
+                    x1, y1, z1 = corner_offset(vert_1) 
+                    x2, y2, z2 = corner_offset(vert_2)
                     
                     v_1 = net[i + x1][j + y1][k + z1] - isoval
                     v_2 = net[i + x2][j + y2][k + z2] - isoval
@@ -92,7 +100,7 @@ def march_cubes(data):
                     
                     a_array[v] = ((v_1 * p_2) - (v_2 * p_1)) * (1.0 / (v_1 - v_2))               
                     
-                # Add Verts and Triangles
+                # add vertices and faces
                 count = 0
                 while(triangle_list[count]!= -1):
                     v_len = len(marching.vertices)
@@ -106,6 +114,7 @@ def march_cubes(data):
                     count += 3
     return data
 
+# translates a bitflag into an integer
 def bitflag_to_int(bitflag):
     bitflag_int = 0
     for i in range(len(bitflag)):
@@ -113,17 +122,7 @@ def bitflag_to_int(bitflag):
             bitflag_int += 2 ** i
     return bitflag_int
 
-def to_edge_bitflag(bitflag):
-    edge_bitflag = [0 for _ in range(12)]
-    count = 0
-    for verts in cube.CubeEdges:
-        if bitflag[verts[0]] != bitflag[verts[1]]:
-            edge_bitflag[count] = 1
-        count += 1
-        
-    return edge_bitflag
-
-def edge_offset(point):
+def corner_offset(point):
     if point == 0: return (0, 0, 0)
     if point == 1: return (1, 0, 0)
     if point == 2: return (1, 0, 1)
