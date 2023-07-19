@@ -23,7 +23,7 @@ class marching:
 
 LENGTH = 1
 ISOVAL = 1  # iso-value
-SUBDIV = 2  # resolution
+SUBDIV = 32  # resolution
 SHOW_SINGLE = True
 
 def sphere(vec):
@@ -51,63 +51,47 @@ def march_cubes(data):
     isoval = data[3]
     function = data[4]
         
-    net = [[[None for _ in range(subdiv)] for _ in range(subdiv)] for _ in range(subdiv)]
+    net = [[[None for _ in range(subdiv+1)] for _ in range(subdiv+1)] for _ in range(subdiv+1)]
     
-    for i in range(subdiv):
-        for j in range(subdiv):
-            for k in range(subdiv):
-                net[i][j][k] = function((1/subdiv) * vec3(i - length, j - length, k - length)) - isoval
-
-    print(net)
+    for i in range(subdiv+1):
+        for j in range(subdiv+1):
+            for k in range(subdiv+1):
+                net[i][j][k] = function(vec3((2.0 * length / subdiv) * i - length,
+                                             (2.0 * length / subdiv) * j - length,
+                                             (2.0 * length / subdiv) * k - length))
     
-    bitflags = [[[None for _ in range(subdiv - 1)] for _ in range(subdiv - 1)] for _ in range(subdiv - 1)]
-    
-    for i in range(len(bitflags)):
-        for j in range(len(bitflags[i])):
-            for k in range(len(bitflags[j])):
-                flag = [0 for i in range(8)]
+    for i in range(len(net) - 1):
+        for j in range(len(net) - 1):
+            for k in range(len(net) - 1):
+                cube_flag = [1 for _ in range(8)]
                 
-                if net[i    ][j    ][k    ] > 0: flag[0] = 1
-                if net[i + 1][j    ][k    ] > 0: flag[1] = 1
-                if net[i    ][j + 1][k    ] > 0: flag[2] = 1
-                if net[i + 1][j + 1][k    ] > 0: flag[3] = 1
+                for p in range(8):
+                    x, y, z = edge_offset(p)
+                    if net[i + x][j + y][k + z] - isoval >= 0.0: cube_flag[p] = 0
                 
-                if net[i    ][j    ][k + 1] > 0: flag[4] = 1
-                if net[i + 1][j    ][k + 1] > 0: flag[5] = 1
-                if net[i    ][j + 1][k + 1] > 0: flag[6] = 1
-                if net[i + 1][j + 1][k + 1] > 0: flag[7] = 1
-                
-                bitflags[i][j][k] = flag
-    print(bitflags)
-                
-    for i in range(len(bitflags)):
-        for j in range(len(bitflags[i])):
-            for k in range(len(bitflags[j])):
-                edge_bitflag = to_edge_bitflag(bitflag=bitflags[i][j][k])
-                triangle_list = cube.CubeTriangles[bitflag_to_int(bitflags[i][j][k])]
-                A_array = [None for _ in range(12)]
-                
-                # Skip if empty
-                if bitflag_to_int(bitflags[i][j][k]) == 0 or bitflag_to_int(bitflags[i][j][k]) == 255:
+                int_cube_flag = bitflag_to_int(cube_flag)
+                if int_cube_flag == 0 or int_cube_flag == 255:
                     continue
-                for e in range(len(edge_bitflag)):
-                    if edge_bitflag[e] == 1:
-                        x1, y1, z1 = edge_offset(cube.CubeEdges[e][0]) 
-                        x2, y2, z2 = edge_offset(cube.CubeEdges[e][1]) 
-                        
-                        v_1 = net[i + x1][j + y1][k + z1]
-                        v_2 = net[i + x2][j + y2][k + z2]
-                        
-                        p_1 = (1.0 / subdiv) * vec3(i + x1 - length, j + y1 - length, k + z1 - length)
-                        p_2 = (1.0 / subdiv) * vec3(i + x2 - length, j + y2 - length, k + z2 - length)
-                        
-                        try :
-                            A_array[e] = (v_1 * p_2) - (v_2 * p_1) * (1.0 / (v_1 - v_2))
-                            # print(  f"vertex value = {vertices[e]}\n" + f"v_1 = {v_1}\tv_2 = {v_2}\n" + f"p_1 = {p_1}\tp_2 = {p_2}\n")
-
-                        except:
-                                print(f"EXCEPTION THROWN : {v_1} - {v_2}")
-
+                
+                a_array = [None for _ in range(12)]
+                triangle_list = cube.CubeTriangles[int_cube_flag]
+                
+                for v in range(len(cube.CubeEdges)):
+                    vert_1 = cube.CubeEdges[v][0]
+                    vert_2 = cube.CubeEdges[v][1]
+                    if cube_flag[vert_1] == cube_flag[vert_2]:
+                        continue
+                    x1, y1, z1 = edge_offset(vert_1) 
+                    x2, y2, z2 = edge_offset(vert_2)
+                    
+                    v_1 = net[i + x1][j + y1][k + z1] - isoval
+                    v_2 = net[i + x2][j + y2][k + z2] - isoval
+                    
+                    p_1 = vec3((2.0 * length / subdiv) * (i + x1) - length, (2.0 * length / subdiv) * (j + y1) - length, (2.0 * length / subdiv) * (k + z1) - length)
+                    p_2 = vec3((2.0 * length / subdiv) * (i + x2) - length, (2.0 * length / subdiv) * (j + y2) - length, (2.0 * length / subdiv) * (k + z2) - length)
+                    
+                    a_array[v] = ((v_1 * p_2) - (v_2 * p_1)) * (1.0 / (v_1 - v_2))               
+                    
                 # Add Verts and Triangles
                 count = 0
                 while(triangle_list[count]!= -1):
@@ -115,12 +99,11 @@ def march_cubes(data):
                     temp = [3, v_len, 1 + v_len, 2 + v_len]
                     
                     marching.faces += [temp]
-                    marching.vertices.append(A_array[triangle_list[count]])
-                    marching.vertices.append(A_array[triangle_list[count + 1]])
-                    marching.vertices.append(A_array[triangle_list[count + 2]])
+                    marching.vertices.append(a_array[triangle_list[count]])
+                    marching.vertices.append(a_array[triangle_list[count + 1]])
+                    marching.vertices.append(a_array[triangle_list[count + 2]])
                     
                     count += 3
-    
     return data
 
 def bitflag_to_int(bitflag):
@@ -141,15 +124,15 @@ def to_edge_bitflag(bitflag):
     return edge_bitflag
 
 def edge_offset(point):
-    if point == 0: return (0, 0, 1)
-    if point == 1: return (1, 0, 1)
-    if point == 2: return (1, 0, 0)
-    if point == 3: return (0, 0, 0)
+    if point == 0: return (0, 0, 0)
+    if point == 1: return (1, 0, 0)
+    if point == 2: return (1, 0, 1)
+    if point == 3: return (0, 0, 1)
     
-    if point == 4: return (0, 1, 1)
-    if point == 5: return (1, 1, 1)
-    if point == 6: return (1, 1, 0)
-    if point == 7: return (0, 1, 0)
+    if point == 4: return (0, 1, 0)
+    if point == 5: return (1, 1, 0)
+    if point == 6: return (1, 1, 1)
+    if point == 7: return (0, 1, 1)
     
     RuntimeError("Assertion not met")
 
