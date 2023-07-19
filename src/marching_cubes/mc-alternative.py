@@ -51,25 +51,25 @@ def march_cubes(data):
     isoval = data[3]
     function = data[4]
         
-    net = [[[None for _ in range(subdiv+1)] for _ in range(subdiv+1)] for _ in range(subdiv+1)]
+    datapoints = [[[None for _ in range(subdiv+1)] for _ in range(subdiv+1)] for _ in range(subdiv+1)]
     
     # calculate values of the function
     for i in range(subdiv+1):
         for j in range(subdiv+1):
             for k in range(subdiv+1):
-                net[i][j][k] = function(vec3((2.0 * length / subdiv) * i - length,
+                datapoints[i][j][k] = function(vec3((2.0 * length / subdiv) * i - length,
                                              (2.0 * length / subdiv) * j - length,
                                              (2.0 * length / subdiv) * k - length))
     
-    for i in range(len(net) - 1):
-        for j in range(len(net) - 1):
-            for k in range(len(net) - 1):
+    for i in range(len(datapoints) - 1):
+        for j in range(len(datapoints) - 1):
+            for k in range(len(datapoints) - 1):
                 cube_flag = [1 for _ in range(8)]
                 
                 # calculate cube bitflag
                 for p in range(8):
                     x, y, z = corner_offset(p)
-                    if net[i + x][j + y][k + z] - isoval >= 0.0: cube_flag[p] = 0
+                    if datapoints[i + x][j + y][k + z] - isoval >= 0.0: cube_flag[p] = 0
                 
                 # if the cube is empty, skip
                 int_cube_flag = bitflag_to_int(cube_flag)
@@ -92,21 +92,26 @@ def march_cubes(data):
                     x1, y1, z1 = corner_offset(vert_1) 
                     x2, y2, z2 = corner_offset(vert_2)
                     
-                    v_1 = net[i + x1][j + y1][k + z1] - isoval
-                    v_2 = net[i + x2][j + y2][k + z2] - isoval
+                    v_1 = datapoints[i + x1][j + y1][k + z1] - isoval
+                    v_2 = datapoints[i + x2][j + y2][k + z2] - isoval
                     
-                    p_1 = vec3((2.0 * length / subdiv) * (i + x1) - length, (2.0 * length / subdiv) * (j + y1) - length, (2.0 * length / subdiv) * (k + z1) - length)
-                    p_2 = vec3((2.0 * length / subdiv) * (i + x2) - length, (2.0 * length / subdiv) * (j + y2) - length, (2.0 * length / subdiv) * (k + z2) - length)
+                    p_1 = vec3((2.0 * length / subdiv) * (i + x1) - length,
+                               (2.0 * length / subdiv) * (j + y1) - length,
+                               (2.0 * length / subdiv) * (k + z1) - length)
+                    
+                    p_2 = vec3((2.0 * length / subdiv) * (i + x2) - length,
+                               (2.0 * length / subdiv) * (j + y2) - length,
+                               (2.0 * length / subdiv) * (k + z2) - length)
                     
                     a_array[v] = ((v_1 * p_2) - (v_2 * p_1)) * (1.0 / (v_1 - v_2))               
                     
                 # add vertices and faces
                 count = 0
                 while(triangle_list[count]!= -1):
-                    v_len = len(marching.vertices)
-                    temp = [3, v_len, 1 + v_len, 2 + v_len]
+                    vertices_len = len(marching.vertices)
+                    face_list = [3, vertices_len, 1 + vertices_len, 2 + vertices_len]
                     
-                    marching.faces += [temp]
+                    marching.faces += [face_list]
                     marching.vertices.append(a_array[triangle_list[count]])
                     marching.vertices.append(a_array[triangle_list[count + 1]])
                     marching.vertices.append(a_array[triangle_list[count + 2]])
