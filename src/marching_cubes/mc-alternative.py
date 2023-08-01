@@ -50,8 +50,95 @@ def march_cubes(data):
     subdiv = data[2]
     isoval = data[3]
     function = data[4]
-
+        
+    datapoints = [[[None for _ in range(subdiv+1)] for _ in range(subdiv+1)] for _ in range(subdiv+1)]
+    
+    # calculate values of the function
+    for i in range(subdiv+1):
+        for j in range(subdiv+1):
+            for k in range(subdiv+1):
+                datapoints[i][j][k] = function(vec3((2.0 * length / subdiv) * i - length,
+                                             (2.0 * length / subdiv) * j - length,
+                                             (2.0 * length / subdiv) * k - length))
+    
+    for i in range(len(datapoints) - 1):
+        for j in range(len(datapoints) - 1):
+            for k in range(len(datapoints) - 1):
+                cube_flag = [1 for _ in range(8)]
+                
+                # calculate cube bitflag
+                for p in range(8):
+                    x, y, z = corner_offset(p)
+                    if datapoints[i + x][j + y][k + z] - isoval >= 0.0: cube_flag[p] = 0
+                
+                # if the cube is empty, skip
+                int_cube_flag = bitflag_to_int(cube_flag)
+                if int_cube_flag == 0 or int_cube_flag == 255:
+                    continue
+                
+                # init the array a and load in triangle list
+                a_array = [None for _ in range(12)]
+                triangle_list = cube.CubeTriangles[int_cube_flag]
+                
+                for v in range(len(cube.CubeEdges)):
+                    vert_1 = cube.CubeEdges[v][0]
+                    vert_2 = cube.CubeEdges[v][1]
+                    
+                    # skip edges without intersection
+                    if cube_flag[vert_1] == cube_flag[vert_2]:
+                        continue
+                    
+                    # calculate the intersection point and load it into the array a 
+                    x1, y1, z1 = corner_offset(vert_1) 
+                    x2, y2, z2 = corner_offset(vert_2)
+                    
+                    v_1 = datapoints[i + x1][j + y1][k + z1] - isoval
+                    v_2 = datapoints[i + x2][j + y2][k + z2] - isoval
+                    
+                    p_1 = vec3((2.0 * length / subdiv) * (i + x1) - length,
+                               (2.0 * length / subdiv) * (j + y1) - length,
+                               (2.0 * length / subdiv) * (k + z1) - length)
+                    
+                    p_2 = vec3((2.0 * length / subdiv) * (i + x2) - length,
+                               (2.0 * length / subdiv) * (j + y2) - length,
+                               (2.0 * length / subdiv) * (k + z2) - length)
+                    
+                    a_array[v] = ((v_1 * p_2) - (v_2 * p_1)) * (1.0 / (v_1 - v_2))               
+                    
+                # add vertices and faces
+                count = 0
+                while(triangle_list[count]!= -1):
+                    vertices_len = len(marching.vertices)
+                    face_list = [3, vertices_len, 1 + vertices_len, 2 + vertices_len]
+                    
+                    marching.faces += [face_list]
+                    marching.vertices.append(a_array[triangle_list[count]])
+                    marching.vertices.append(a_array[triangle_list[count + 1]])
+                    marching.vertices.append(a_array[triangle_list[count + 2]])
+                    
+                    count += 3
     return data
+
+# translates a bitflag into an integer
+def bitflag_to_int(bitflag):
+    bitflag_int = 0
+    for i in range(len(bitflag)):
+        if bitflag[i] == 1:
+            bitflag_int += 2 ** i
+    return bitflag_int
+
+def corner_offset(point):
+    if point == 0: return (0, 0, 0)
+    if point == 1: return (1, 0, 0)
+    if point == 2: return (1, 0, 1)
+    if point == 3: return (0, 0, 1)
+    
+    if point == 4: return (0, 1, 0)
+    if point == 5: return (1, 1, 0)
+    if point == 6: return (1, 1, 1)
+    if point == 7: return (0, 1, 1)
+    
+    RuntimeError("Assertion not met")
 
 if __name__ == "__main__":
     if SHOW_SINGLE:

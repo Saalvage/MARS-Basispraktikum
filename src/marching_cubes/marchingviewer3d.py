@@ -18,13 +18,13 @@ class viewer3d:
         for vert in vertices:
             colors.append((0.5 * sin(vert.x) + 0.5, 0.5 * sin(vert.y) + 0.5, 0.5 * sin(vert.z) + 0.5 ))
             verts.append((vert.x, vert.y, vert.z))
-
+        
         return verts, faces, colors
 
     def display_marching_cube(self, mc, offset):
         vertices, faces, colors = self.get_marching_data(mc.vertices, mc.faces)  
         mesh = pv.PolyData(np.array([[v[0] + offset.x, v[1] + offset.y, v[2] + offset.z] for v in vertices]) , np.array(faces))
-        mesh.add_field_data(np.array(colors), "colors")
+        mesh.point_data["colors"] = np.array(colors)
         self.p.add_mesh(mesh, show_edges=True, line_width=1, scalars="colors", preference='cell', rgb=True)
 
     # only works after implementing normals in task 5
